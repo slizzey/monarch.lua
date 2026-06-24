@@ -6393,6 +6393,265 @@ local Library do
             return Dropdown
         end
 
+        Library.Sections.Listbox = function(self, Data)
+            Data = Data or { }
+
+            local Listbox = {
+                Window = self.Window,
+                Page = self.Page,
+                Section = self,
+
+                Name = Data.Name or Data.name or "Listbox",
+                Flag = Data.Flag or Data.flag or Library:NextFlag(),
+                Items = Data.Items or Data.items or { },
+                Default = Data.Default or Data.default or nil,
+                Callback = Data.Callback or Data.callback or function() end,
+                Multi = Data.Multi or Data.multi or false,
+
+                Value = { },
+                Options = { },
+                OptionsWithIndexes = { },
+                SelectedIndex = nil
+            }
+
+            local Items = { } do
+                Items["Listbox"] = Instances:Create("Frame", {
+                    Parent = Listbox.Section.Items["Content"].Instance,
+                    Name = "\0",
+                    BorderColor3 = FromRGB(0, 0, 0),
+                    BackgroundTransparency = 0.6499999761581421,
+                    Size = UDim2New(1, 0, 0, 30),
+                    ZIndex = 2,
+                    BorderSizePixel = 0,
+                    BackgroundColor3 = FromRGB(27, 26, 29)
+                })  Items["Listbox"]:AddToTheme({BackgroundColor3 = "Element"})
+
+                Instances:Create("UICorner", {
+                    Parent = Items["Listbox"].Instance,
+                    Name = "\0",
+                    CornerRadius = UDimNew(0, 4)
+                })
+
+                Items["Holder"] = Instances:Create("ScrollingFrame", {
+                    Parent = Items["Listbox"].Instance,
+                    Name = "\0",
+                    BorderColor3 = FromRGB(0, 0, 0),
+                    BackgroundTransparency = 1,
+                    Position = UDim2New(0, 5, 0, 5),
+                    Size = UDim2New(1, -10, 1, -10),
+                    ZIndex = 2,
+                    BorderSizePixel = 0,
+                    CanvasSize = UDim2New(0, 0, 0, 0)
+                })  Items["Holder"]:AddToTheme({ScrollBarImageColor3 = "Accent"})
+
+                Instances:Create("UIListLayout", {
+                    Parent = Items["Holder"].Instance,
+                    Name = "\0",
+                    Padding = UDimNew(0, 2),
+                    SortOrder = Enum.SortOrder.LayoutOrder
+                })
+            end
+
+            function Listbox:Get()
+                return Listbox.Value
+            end
+
+            function Listbox:SetVisibility(Bool)
+                Items["Listbox"].Instance.Visible = Bool
+            end
+
+            function Listbox:RefreshPosition(Bool)
+                -- Listbox doesn't animate like other elements
+            end
+
+            function Listbox:Add(Option)
+                local OptionData = {
+                    Name = Option,
+                    Selected = false,
+                    Button = nil
+                }
+
+                local OptionButton = Instances:Create("TextButton", {
+                    Parent = Items["Holder"].Instance,
+                    Name = "\0",
+                    FontFace = Library.Font,
+                    TextColor3 = FromRGB(240, 240, 240),
+                    TextTransparency = 0.30000001192092896,
+                    Text = Option,
+                    AutoButtonColor = false,
+                    BackgroundTransparency = 1,
+                    Size = UDim2New(1, 0, 0, 20),
+                    BorderSizePixel = 0,
+                    TextSize = 14,
+                    BackgroundColor3 = FromRGB(255, 255, 255)
+                })
+
+                local OptionAccent = Instances:Create("Frame", {
+                    Parent = OptionButton.Instance,
+                    Name = "\0",
+                    BorderColor3 = FromRGB(0, 0, 0),
+                    AnchorPoint = Vector2New(0, 0.5),
+                    BackgroundTransparency = 1,
+                    Position = UDim2New(0, 0, 0.5, 0),
+                    Size = UDim2New(0, 4, 0, 4),
+                    BorderSizePixel = 0,
+                    BackgroundColor3 = FromRGB(255, 255, 255)
+                })
+
+                Instances:Create("UIGradient", {
+                    Parent = OptionAccent.Instance,
+                    Name = "\0",
+                    Enabled = true,
+                    Rotation = -115,
+                    Color = RGBSequence{RGBSequenceKeypoint(0, FromRGB(255, 255, 255)), RGBSequenceKeypoint(1, FromRGB(143, 143, 143))}
+                }):AddToTheme({Color = function()
+                    return RGBSequence{RGBSequenceKeypoint(0, Library.Theme.Accent), RGBSequenceKeypoint(1, Library.Theme.AccentGradient)}
+                end})
+
+                Instances:Create("UICorner", {
+                    Parent = OptionAccent.Instance,
+                    Name = "\0",
+                    CornerRadius = UDimNew(0, 2)
+                })
+
+                local OptionText = Instances:Create("TextLabel", {
+                    Parent = OptionButton.Instance,
+                    Name = "\0",
+                    FontFace = Library.Font,
+                    TextColor3 = FromRGB(255, 255, 255),
+                    TextTransparency = 0.30000001192092896,
+                    Text = Option,
+                    Size = UDim2New(0, 0, 0, 15),
+                    AnchorPoint = Vector2New(0, 0.5),
+                    BorderSizePixel = 0,
+                    BackgroundTransparency = 1,
+                    Position = UDim2New(0, 15, 0.5, 0),
+                    BorderColor3 = FromRGB(0, 0, 0),
+                    ZIndex = 2,
+                    TextSize = 14,
+                    BackgroundColor3 = FromRGB(255, 255, 255)
+                })  OptionText:AddToTheme({TextColor3 = "Text"})
+
+                function OptionData:Toggle(State)
+                    if State == "Active" then
+                        OptionAccent:Tween(TweenInfo.new(0.2, Enum.EasingStyle.Quint, Enum.EasingDirection.Out), {BackgroundTransparency = 0, Size = UDim2New(0, 4, 0, 4)})
+                        OptionText:Tween(TweenInfo.new(0.2, Enum.EasingStyle.Quint, Enum.EasingDirection.Out), {Position = UDim2New(0, 15, 0.5, 0), TextTransparency = 0})
+                    else
+                        OptionAccent:Tween(TweenInfo.new(0.2, Enum.EasingStyle.Quint, Enum.EasingDirection.Out), {BackgroundTransparency = 1, Size = UDim2New(0, 0, 0, 0)})
+                        OptionText:Tween(TweenInfo.new(0.2, Enum.EasingStyle.Quint, Enum.EasingDirection.Out), {Position = UDim2New(0, 10, 0.5, 0), TextTransparency = 0.3})
+                    end
+                end
+
+                function OptionData:Set()
+                    if Listbox.Multi then
+                        local Index = TableFind(Listbox.Value, OptionData.Name)
+
+                        if Index then
+                            TableRemove(Listbox.Value, Index)
+                        else
+                            TableInsert(Listbox.Value, OptionData.Name)
+                        end
+
+                        OptionData.Selected = not OptionData.Selected
+                        OptionData:Toggle(OptionData.Selected and "Active" or "Inactive")
+
+                        Library.Flags[Listbox.Flag] = Listbox.Value
+                    else
+                        if OptionData.Selected then
+                            return
+                        end
+
+                        Listbox.Value = OptionData.Name
+                        Library.Flags[Listbox.Flag] = OptionData.Name
+                        Listbox.SelectedIndex = #Listbox.OptionsWithIndexes
+
+                        OptionData.Selected = true
+                        OptionData:Toggle("Active")
+
+                        for Index, Value in Listbox.Options do
+                            if Value ~= OptionData then
+                                Value.Selected = false
+                                Value:Toggle("Inactive")
+                            end
+                        end
+                    end
+
+                    if Listbox.Callback then
+                        Library:SafeCall(Listbox.Callback, Listbox.Value)
+                    end
+                end
+
+                OptionButton:OnHover(function()
+                    if not OptionData.Selected then
+                        OptionText:Tween(TweenInfo.new(0.15, Enum.EasingStyle.Quint, Enum.EasingDirection.Out), {TextTransparency = 0})
+                    end
+                end)
+
+                OptionButton:OnHoverLeave(function()
+                    if not OptionData.Selected then
+                        OptionText:Tween(TweenInfo.new(0.15, Enum.EasingStyle.Quint, Enum.EasingDirection.Out), {TextTransparency = 0.3})
+                    end
+                end)
+
+                OptionButton:Connect("MouseButton1Down", function()
+                    OptionData:Set()
+                end)
+
+                OptionData.Button = OptionButton
+                Listbox.Options[OptionData.Name] = OptionData
+                Listbox.OptionsWithIndexes[#Listbox.OptionsWithIndexes+1] = OptionData
+
+                return OptionData
+            end
+
+            function Listbox:Remove(Option)
+                if Listbox.Options[Option] then
+                    Listbox.Options[Option].Button:Clean()
+                    Listbox.Options[Option] = nil
+                end
+            end
+
+            function Listbox:Refresh(List, DefaultVal)
+                local OptionsToRemove = {}
+                for Name, _ in pairs(Listbox.Options) do
+                    table.insert(OptionsToRemove, Name)
+                end
+                for _, Name in ipairs(OptionsToRemove) do
+                    Listbox:Remove(Name)
+                end
+                Listbox.Options = {}
+                Listbox.OptionsWithIndexes = {}
+                for Index, Value in ipairs(List) do
+                    Listbox:Add(Value)
+                end
+                if DefaultVal then
+                    Listbox:Set(DefaultVal)
+                else
+                    Listbox.Value = Listbox.Multi and {} or nil
+                    Library.Flags[Listbox.Flag] = Listbox.Value
+                end
+                -- Update canvas size
+                Items["Holder"].Instance.CanvasSize = UDim2New(0, 0, 0, #Listbox.OptionsWithIndexes * 22)
+            end
+
+            for Index, Value in Listbox.Items do
+                Listbox:Add(Value)
+            end
+
+            Items["Holder"].Instance.CanvasSize = UDim2New(0, 0, 0, #Listbox.OptionsWithIndexes * 22)
+
+            if Listbox.Default then
+                Listbox:Set(Listbox.Default)
+            end
+
+            Library.SetFlags[Listbox.Flag] = function(Value)
+                Listbox:Set(Value)
+            end
+
+            Listbox.Section.Elements[#Listbox.Section.Elements+1] = Listbox
+            return Listbox
+        end
+
         Library.Sections.Label = function(self, Name)
             local Label = {
                 Window = self.Window,

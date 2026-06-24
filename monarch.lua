@@ -2135,28 +2135,30 @@ end
 
 updatePlayerList()
 
-PlayersSection:Label("Players:")
-
-for _, playerName in ipairs(playerList) do
-    PlayersSection:Button({
-        Name = playerName,
-        Callback = function()
-            selectedPlayerName = playerName
+local playerListbox = PlayersSection:Listbox({
+    Name = "Players",
+    Flag = "PlayerListbox",
+    Items = playerList,
+    Multi = false,
+    Callback = function(Value)
+        if Value then
+            selectedPlayerName = Value
             for _, plr in ipairs(Players:GetPlayers()) do
-                if plr.Name == playerName then
+                if plr.Name == Value then
                     trollTarget = plr
                     break
                 end
             end
-            notify("Monarch", "Selected: " .. playerName, 2)
+            notify("Monarch", "Selected: " .. Value, 2)
         end
-    })
-end
+    end
+})
 
 PlayersSection:Button({
     Name = "Refresh",
     Callback = function()
         updatePlayerList()
+        playerListbox:Refresh(playerList)
         notify("Monarch", "Player list refreshed", 2)
     end
 })
