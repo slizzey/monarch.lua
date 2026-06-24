@@ -1497,7 +1497,7 @@ end
 
 Window:Category("Aim")
 
-local AimPage = Window:Page({Name = "Aim"})
+local AimPage = Window:Page({Name = "", Icon = "138827881557940"})
 local AimMainSection = AimPage:Section({Name = "Aimbot", Side = 1})
 
 AimMainSection:Toggle({
@@ -1768,7 +1768,7 @@ AimExtraSection:Label("Crosshair Color"):Colorpicker({
 
 Window:Category("Visual")
 
-local VisualPage = Window:Page({Name = "Visual"})
+local VisualPage = Window:Page({Name = "", Icon = "122669828593160"})
 local ESPSection = VisualPage:Section({Name = "ESP", Side = 1})
 
 ESPSection:Toggle({
@@ -1892,7 +1892,7 @@ local VisualExtraSection = VisualPage:Section({Name = "Visuals", Side = 2})
 
 Window:Category("Movement")
 
-local MovementPage = Window:Page({Name = "Movement"})
+local MovementPage = Window:Page({Name = "", Icon = "138827881557940"})
 local MoveSection = MovementPage:Section({Name = "Movement", Side = 1})
 
 MoveSection:Toggle({
@@ -2035,7 +2035,7 @@ MoveSection:Slider({
 
 Window:Category("Players")
 
-local PlayersPage = Window:Page({Name = "Players"})
+local PlayersPage = Window:Page({Name = "", Icon = "138827881557940"})
 local PlayersSection = PlayersPage:Section({Name = "Player Selection", Side = 1})
 
 local playerList = {}
@@ -2194,7 +2194,7 @@ end)
 
 Window:Category("Troll")
 
-local TrollPage = Window:Page({Name = "Troll"})
+local TrollPage = Window:Page({Name = "", Icon = "138827881557940"})
 local TrollSection = TrollPage:Section({Name = "Troll Features", Side = 1})
 
 TrollSection:Slider({
@@ -2302,7 +2302,7 @@ TrollSection:Toggle({
 
 Window:Category("Misc")
 
-local MiscPage = Window:Page({Name = "Misc"})
+local MiscPage = Window:Page({Name = "", Icon = "138827881557940"})
 local MiscSection = MiscPage:Section({Name = "Misc", Side = 1})
 
 MiscSection:Toggle({
