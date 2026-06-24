@@ -245,6 +245,12 @@ local MovementState = {
     jumpValue = 50,
     gravityEnabled = false,
     gravityValue = 196.2,
+    -- Spring physics for smooth flight
+    flyVelocity = Vector3.new(0, 0, 0),
+    flyTargetVelocity = Vector3.new(0, 0, 0),
+    springVelocity = Vector3.new(0, 0, 0),
+    springFrequency = 8,
+    springDamping = 0.8,
 }
 
 local ESPState = {
@@ -1068,19 +1074,61 @@ RunService.RenderStepped:Connect(function(dt)
     if not MovementState.flyOn then return end
     local char = LocalPlayer.Character
     local root = char and char:FindFirstChild("HumanoidRootPart")
-    if not root then return end
-    local moveDir = Vector3.new()
-    if UserInputService:IsKeyDown(Enum.KeyCode.W) then moveDir += Camera.CFrame.LookVector end
-    if UserInputService:IsKeyDown(Enum.KeyCode.S) then moveDir -= Camera.CFrame.LookVector end
-    if UserInputService:IsKeyDown(Enum.KeyCode.A) then moveDir -= Camera.CFrame.RightVector end
-    if UserInputService:IsKeyDown(Enum.KeyCode.D) then moveDir += Camera.CFrame.RightVector end
-    if UserInputService:IsKeyDown(Enum.KeyCode.Space) then moveDir += Vector3.new(0, 1, 0) end
-    if UserInputService:IsKeyDown(Enum.KeyCode.LeftControl) then moveDir -= Vector3.new(0, 1, 0) end
-    if moveDir.Magnitude > 0 then
-        moveDir = moveDir.Unit
-        root.CFrame = root.CFrame + (moveDir * MovementState.flySpeed * dt)
+    if not root or not MovementState.bodyVelocity then return end
+
+    -- Calculate target velocity based on input
+    local targetVel = Vector3.new(0, 0, 0)
+    if UserInputService:IsKeyDown(Enum.KeyCode.W) then targetVel += Camera.CFrame.LookVector end
+    if UserInputService:IsKeyDown(Enum.KeyCode.S) then targetVel -= Camera.CFrame.LookVector end
+    if UserInputService:IsKeyDown(Enum.KeyCode.A) then targetVel -= Camera.CFrame.RightVector end
+    if UserInputService:IsKeyDown(Enum.KeyCode.D) then targetVel += Camera.CFrame.RightVector end
+    if UserInputService:IsKeyDown(Enum.KeyCode.Space) then targetVel += Vector3.new(0, 1, 0) end
+    if UserInputService:IsKeyDown(Enum.KeyCode.LeftControl) then targetVel -= Vector3.new(0, 1, 0) end
+
+    -- Flatten movement direction to horizontal plane for WASD
+    local horizontalMove = Vector3.new(targetVel.X, 0, targetVel.Z)
+    if horizontalMove.Magnitude > 0 then
+        horizontalMove = horizontalMove.Unit * MovementState.flySpeed
     end
-    root.CFrame = CFrame.new(root.Position) * Camera.CFrame.Rotation
+    targetVel = Vector3.new(horizontalMove.X, targetVel.Y * MovementState.flySpeed, horizontalMove.Z)
+
+    -- Apply spring physics to each axis
+    local velX, springVelX = springStep(
+        MovementState.flyVelocity.X,
+        targetVel.X,
+        MovementState.springVelocity.X,
+        dt,
+        MovementState.springFrequency,
+        MovementState.springDamping
+    )
+    local velY, springVelY = springStep(
+        MovementState.flyVelocity.Y,
+        targetVel.Y,
+        MovementState.springVelocity.Y,
+        dt,
+        MovementState.springFrequency,
+        MovementState.springDamping
+    )
+    local velZ, springVelZ = springStep(
+        MovementState.flyVelocity.Z,
+        targetVel.Z,
+        MovementState.springVelocity.Z,
+        dt,
+        MovementState.springFrequency,
+        MovementState.springDamping
+    )
+
+    -- Update state
+    MovementState.flyVelocity = Vector3.new(velX, velY, velZ)
+    MovementState.springVelocity = Vector3.new(springVelX, springVelY, springVelZ)
+
+    -- Apply to BodyVelocity
+    MovementState.bodyVelocity.Velocity = MovementState.flyVelocity
+
+    -- Update BodyGyro to face camera direction
+    if MovementState.bodyGyro then
+        MovementState.bodyGyro.CFrame = CFrame.new(root.Position) * Camera.CFrame.Rotation
+    end
 end)
 
 RunService.RenderStepped:Connect(function()
@@ -1322,6 +1370,15 @@ local function respawnCharacter()
     if char then
         char:BreakJoints()
     end
+end
+
+-- Spring physics function for smooth flight (Orca-style)
+local function springStep(current, target, velocity, dt, frequency, damping)
+    local displacement = target - current
+    local acceleration = displacement * (frequency * frequency) - velocity * (2 * frequency * damping)
+    local newVelocity = velocity + acceleration * dt
+    local newValue = current + newVelocity * dt
+    return newValue, newVelocity
 end
 
 local function rejoinGame()
@@ -1845,6 +1902,11 @@ MoveSection:Toggle({
         local root = char and char:FindFirstChild("HumanoidRootPart")
         if not root then return end
         if MovementState.flyOn then
+            -- Reset spring velocities
+            MovementState.flyVelocity = Vector3.new(0, 0, 0)
+            MovementState.flyTargetVelocity = Vector3.new(0, 0, 0)
+            MovementState.springVelocity = Vector3.new(0, 0, 0)
+            
             MovementState.bodyVelocity = Instance.new("BodyVelocity")
             MovementState.bodyVelocity.MaxForce = Vector3.new(math.huge, math.huge, math.huge)
             MovementState.bodyVelocity.Velocity = Vector3.new(0, 0, 0)

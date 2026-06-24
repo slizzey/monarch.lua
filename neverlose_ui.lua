@@ -181,16 +181,16 @@ local Library do
 
     local Themes = {
         ["Preset"] = {
-            ["AccentGradient"] = FromRGB(0, 195, 255),   -- Slightly deeper blue accent
-            ["Background 2"] = FromRGB(10, 10, 12),      -- Very dark gray
-            ["Background"] = FromRGB(12, 12, 14),        -- Main near-black background
-            ["Text"] = FromRGB(235, 235, 235),           -- Slightly dimmed light text
-            ["Outline"] = FromRGB(25, 25, 28),           -- Subtle outline, almost invisible
-            ["Section Top"] = FromRGB(28, 27, 31),       -- Dark section header
-            ["Section Background"] = FromRGB(10, 10, 12),-- Deep black section background
-            ["Section Background 2"] = FromRGB(14, 14, 16),-- Alternate section, minimal difference
-            ["Accent"] = FromRGB(0, 116, 224),           -- Darker blue accent for consistency
-            ["Element"] = FromRGB(16, 16, 18)            -- Deep gray for UI elements
+            ["AccentGradient"] = FromRGB(100, 200, 255),  -- Brighter cyan accent (Orca-like)
+            ["Background 2"] = FromRGB(8, 8, 10),         -- Deep black-gray
+            ["Background"] = FromRGB(10, 10, 12),          -- Main near-black background
+            ["Text"] = FromRGB(255, 255, 255),             -- Pure white text
+            ["Outline"] = FromRGB(30, 30, 35),             -- Subtle outline
+            ["Section Top"] = FromRGB(20, 20, 24),          -- Darker section header
+            ["Section Background"] = FromRGB(8, 8, 10),     -- Deep black section background
+            ["Section Background 2"] = FromRGB(12, 12, 15),  -- Alternate section
+            ["Accent"] = FromRGB(80, 180, 255),             -- Cyan accent
+            ["Element"] = FromRGB(18, 18, 22)              -- Deep gray for UI elements
         }
     }
 
@@ -2291,6 +2291,12 @@ local Library do
                     BackgroundColor3 = FromRGB(27, 25, 29)
                 })  Items["MainFrame"]:AddToTheme({BackgroundColor3 = "Background"})
 
+                Instances:Create("UICorner", {
+                    Parent = Items["MainFrame"].Instance,
+                    Name = "\0",
+                    CornerRadius = UDimNew(0, 16)
+                })
+
                 if IsMobile then 
                     Instances:Create("UIScale", {
                         Parent = Items["MainFrame"].Instance,
@@ -2612,15 +2618,9 @@ local Library do
                 })
 
                 Instances:Create("UICorner", {
-                    Parent = Items["MainFrame"].Instance,
-                    Name = "\0",
-                    CornerRadius = UDimNew(0, 4)
-                })      
-
-                Instances:Create("UICorner", {
                     Parent = Items["LeftTabs"].Instance,
                     Name = "\0",
-                    CornerRadius = UDimNew(0, 4)
+                    CornerRadius = UDimNew(0, 12)
                 })      
                 
                 do
@@ -4514,7 +4514,7 @@ local Library do
                 Instances:Create("UICorner", {
                     Parent = Items["TopBackground"].Instance,
                     Name = "\0",
-                    CornerRadius = UDimNew(0, 4)
+                    CornerRadius = UDimNew(0, 8)
                 })
                 
                 Items["Title"] = Instances:Create("TextLabel", {
@@ -4588,7 +4588,7 @@ local Library do
                 Instances:Create("UICorner", {
                     Parent = Items["Top"].Instance,
                     Name = "\0",
-                    CornerRadius = UDimNew(0, 4)
+                    CornerRadius = UDimNew(0, 8)
                 })
                 
                 Items["Fill"] = Instances:Create("Frame", {
@@ -4702,7 +4702,7 @@ local Library do
                 Instances:Create("UICorner", {
                     Parent = Items["Section"].Instance,
                     Name = "\0",
-                    CornerRadius = UDimNew(0, 4)
+                    CornerRadius = UDimNew(0, 12)
                 })
                 
                 Items["Background"] = Instances:Create("Frame", {
@@ -5379,13 +5379,13 @@ local Library do
                 Instances:Create("UICorner", {
                     Parent = Items["Accent"].Instance,
                     Name = "\0",
-                    CornerRadius = UDimNew(0, 4)
+                    CornerRadius = UDimNew(0, 6)
                 })
-                
+
                 Instances:Create("UICorner", {
                     Parent = Items["Button"].Instance,
                     Name = "\0",
-                    CornerRadius = UDimNew(0, 4)
+                    CornerRadius = UDimNew(0, 8)
                 })
                 
                 Items["Text"] = Instances:Create("TextLabel", {
@@ -5539,7 +5539,8 @@ local Library do
 
                 Instances:Create("UICorner", {
                     Parent = Items["RealSlider"].Instance,
-                    Name = "\0"
+                    Name = "\0",
+                    CornerRadius = UDimNew(0, 4)
                 })
 
                 Items["Accent"] = Instances:Create("Frame", {
