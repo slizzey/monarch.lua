@@ -5485,7 +5485,7 @@ local Library do
                 Max = Data.Max or Data.max or 100,
                 Suffix = Data.Suffix or Data.suffix or "",
                 Decimals = Data.Decimals or Data.decimals or 1,
-                Step = Data.Step or Data.step or 1,
+                Step = Data.Step or Data.step or (Data.Decimals and (10 ^ -Data.Decimals) or 1),
                 Callback = Data.Callback or Data.callback or function() end,
 
                 Value = 0,
@@ -5676,14 +5676,22 @@ local Library do
 
             function Slider:Set(Value)
                 local clampedValue = MathClamp(Value, Slider.Min, Slider.Max)
-                -- Snap to step increments
-                local steppedValue = MathFloor((clampedValue - Slider.Min) / Slider.Step + 0.5) * Slider.Step + Slider.Min
-                steppedValue = MathClamp(steppedValue, Slider.Min, Slider.Max)
-                Slider.Value = Library:Round(steppedValue, Slider.Decimals)
+                -- Snap to step increments with better precision handling
+                local stepInverse = 1 / Slider.Step
+                local steppedValue = MathFloor((clampedValue - Slider.Min) * stepInverse + 0.5) / stepInverse + Slider.Min
+                -- Ensure we don't exceed bounds due to floating point errors
+                if steppedValue > Slider.Max then steppedValue = Slider.Max end
+                if steppedValue < Slider.Min then steppedValue = Slider.Min end
+                Slider.Value = steppedValue
                 Library.Flags[Slider.Flag] = Slider.Value
 
-                Items["Accent"]:Tween(TweenInfo.new(Library.Tween.Time, Enum.EasingStyle.Quart, Enum.EasingDirection.Out), {Size = UDim2New((Slider.Value - Slider.Min) / (Slider.Max - Slider.Min), 0, 1, 0)})
-                Items["Value"].Instance.Text = StringFormat("%s%s", Slider.Value, Slider.Suffix)
+                -- Calculate percent based on stepped value for visual snapping
+                local percent = (Slider.Value - Slider.Min) / (Slider.Max - Slider.Min)
+                -- Instant update - no tween to show clear step snapping
+                Items["Accent"].Instance.Size = UDim2New(percent, 0, 1, 0)
+                -- Format value to ensure proper decimal display
+                local displayValue = string.format("%." .. Slider.Decimals .. "f", Slider.Value)
+                Items["Value"].Instance.Text = displayValue .. Slider.Suffix
 
                 if Slider.Value >= Slider.Max then
                     Items["Icon"].Instance.Position = UDim2New(1, -5, 0.5, 0)

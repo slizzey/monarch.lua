@@ -1762,6 +1762,7 @@ ESPSection:Slider({
     Default = 0.5,
     Suffix = "",
     Step = 0.1,
+    Decimals = 1,
     Callback = function(Value)
         ESPState.chamsFillTransparency = Value
         refreshChams()
@@ -1776,6 +1777,7 @@ ESPSection:Slider({
     Default = 0,
     Suffix = "",
     Step = 0.1,
+    Decimals = 1,
     Callback = function(Value)
         ESPState.chamsOutlineTransparency = Value
         refreshChams()
