@@ -238,19 +238,16 @@ local MovementState = {
     infJumpOn = false,
     noclipOn = false,
     flyOn = false,
-    bodyVelocity = nil,
-    bodyGyro = nil,
     flySpeed = 50,
     jumpEnabled = false,
     jumpValue = 50,
     gravityEnabled = false,
     gravityValue = 196.2,
-    -- Spring physics for smooth flight
+    -- Spring physics for smooth flight (Orca defaults)
     flyVelocity = Vector3.new(0, 0, 0),
-    flyTargetVelocity = Vector3.new(0, 0, 0),
     springVelocity = Vector3.new(0, 0, 0),
-    springFrequency = 8,
-    springDamping = 0.8,
+    springFrequency = 4,
+    springDamping = 1,
 }
 
 local ESPState = {
@@ -1070,11 +1067,12 @@ RunService.Stepped:Connect(function()
     end
 end)
 
-RunService.RenderStepped:Connect(function(dt)
+-- Heartbeat for physics updates (Orca-style)
+RunService.Heartbeat:Connect(function(dt)
     if not MovementState.flyOn then return end
     local char = LocalPlayer.Character
     local root = char and char:FindFirstChild("HumanoidRootPart")
-    if not root or not MovementState.bodyVelocity then return end
+    if not root then return end
 
     -- Calculate target velocity based on input
     local targetVel = Vector3.new(0, 0, 0)
@@ -1122,13 +1120,19 @@ RunService.RenderStepped:Connect(function(dt)
     MovementState.flyVelocity = Vector3.new(velX, velY, velZ)
     MovementState.springVelocity = Vector3.new(springVelX, springVelY, springVelZ)
 
-    -- Apply to BodyVelocity
-    MovementState.bodyVelocity.Velocity = MovementState.flyVelocity
+    -- Apply directly to AssemblyLinearVelocity (Orca-style)
+    root.AssemblyLinearVelocity = MovementState.flyVelocity
+end)
 
-    -- Update BodyGyro to face camera direction
-    if MovementState.bodyGyro then
-        MovementState.bodyGyro.CFrame = CFrame.new(root.Position) * Camera.CFrame.Rotation
-    end
+-- RenderStepped for CFrame updates (Orca-style)
+RunService.RenderStepped:Connect(function()
+    if not MovementState.flyOn then return end
+    local char = LocalPlayer.Character
+    local root = char and char:FindFirstChild("HumanoidRootPart")
+    if not root then return end
+
+    -- Update CFrame to face camera direction
+    root.CFrame = CFrame.new(root.Position) * Camera.CFrame.Rotation
 end)
 
 RunService.RenderStepped:Connect(function()
@@ -1906,20 +1910,12 @@ MoveSection:Toggle({
         if MovementState.flyOn then
             -- Reset spring velocities
             MovementState.flyVelocity = Vector3.new(0, 0, 0)
-            MovementState.flyTargetVelocity = Vector3.new(0, 0, 0)
             MovementState.springVelocity = Vector3.new(0, 0, 0)
-            
-            MovementState.bodyVelocity = Instance.new("BodyVelocity")
-            MovementState.bodyVelocity.MaxForce = Vector3.new(math.huge, math.huge, math.huge)
-            MovementState.bodyVelocity.Velocity = Vector3.new(0, 0, 0)
-            MovementState.bodyVelocity.Parent = root
-            MovementState.bodyGyro = Instance.new("BodyGyro")
-            MovementState.bodyGyro.MaxTorque = Vector3.new(math.huge, math.huge, math.huge)
-            MovementState.bodyGyro.CFrame = root.CFrame
-            MovementState.bodyGyro.Parent = root
+            -- Reset AssemblyLinearVelocity
+            root.AssemblyLinearVelocity = Vector3.new(0, 0, 0)
         else
-            if MovementState.bodyVelocity then MovementState.bodyVelocity:Destroy() MovementState.bodyVelocity = nil end
-            if MovementState.bodyGyro then MovementState.bodyGyro:Destroy() MovementState.bodyGyro = nil end
+            -- Reset velocity when disabling
+            root.AssemblyLinearVelocity = Vector3.new(0, 0, 0)
         end
     end
 })
