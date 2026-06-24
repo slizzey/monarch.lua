@@ -1,4 +1,4 @@
-local Library = loadstring(game:HttpGet("https://raw.githubusercontent.com/ImInsane-1337/neverlose-ui/refs/heads/main/source/library.lua"))()
+local Library = loadstring(game:HttpGet("https://raw.githubusercontent.com/slizzey/monarch.lua/main/neverlose_ui.lua"))()
 
 local UserInputService = game:GetService("UserInputService")
 local TweenService = game:GetService("TweenService")
@@ -182,51 +182,55 @@ local Settings = {
 }
 
 local defaultGravity = Workspace.Gravity
-local isAming = false
-local isShooting = false
-local currentTargetPlayer = nil
-local aimbotOn = false
-local fov = 40
-local smoothness = 0.25
-local wallCheck = true
-local teamCheck = true
-local targetPart = "Head"
-local prediction = 0
-local silentAim = false
-local lockMode = "Hold"
-local toggleActive = false
-local triggerbotOn = false
-local triggerbotRadius = 20
-local triggerbotDelay = 0.05
-local triggerbotWallCheck = true
-local crosshairEnabled = false
-local crosshairSize = 8
-local crosshairColor = Color3.fromRGB(255, 255, 255)
-local showFOV = true
-local fovColor = Color3.fromRGB(100, 60, 180)
-local showLockHud = true
-local autoShootOn = false
-local autoShootMode = "On Lock"
-local autoShootInterval = 0.1
-local velocityResolver = false
-local resolverStrength = 1
+local AimState = {
+    isAming = false,
+    isShooting = false,
+    currentTargetPlayer = nil,
+    aimbotOn = false,
+    fov = 40,
+    smoothness = 0.25,
+    wallCheck = true,
+    teamCheck = true,
+    targetPart = "Head",
+    prediction = 0,
+    silentAim = false,
+    lockMode = "Hold",
+    toggleActive = false,
+    triggerbotOn = false,
+    triggerbotRadius = 20,
+    triggerbotDelay = 0.05,
+    triggerbotWallCheck = true,
+    crosshairEnabled = false,
+    crosshairSize = 8,
+    crosshairColor = Color3.fromRGB(255, 255, 255),
+    showFOV = true,
+    fovColor = Color3.fromRGB(100, 60, 180),
+    showLockHud = true,
+    autoShootOn = false,
+    autoShootMode = "On Lock",
+    autoShootInterval = 0.1,
+    velocityResolver = false,
+    resolverStrength = 1,
+}
 
-local LockStatusGui = nil
-local lockStatusLabel = nil
-local BindToastGui = nil
-local BindToastFrame = nil
-local BindToastLabel = nil
-local bindToastToken = 0
-local savedConfigNames = {}
-local configDropdownOpen = false
-local menuOpen = false
-local KeybindCaptureActive = false
-local savedMouseState = nil
-local mouseUnlockConnection = nil
-local spectating = false
-local spectateTarget = nil
-local originalCameraSubject = nil
-local originalCameraType = nil
+local GUI = {
+    LockStatusGui = nil,
+    lockStatusLabel = nil,
+    BindToastGui = nil,
+    BindToastFrame = nil,
+    BindToastLabel = nil,
+    bindToastToken = 0,
+    savedConfigNames = {},
+    configDropdownOpen = false,
+    menuOpen = false,
+    KeybindCaptureActive = false,
+    savedMouseState = nil,
+    mouseUnlockConnection = nil,
+    spectating = false,
+    spectateTarget = nil,
+    originalCameraSubject = nil,
+    originalCameraType = nil,
+}
 local espSkeletonLines = {}
 local SKELETON_BONES = {
     {"Head", "UpperTorso"}, {"Head", "Torso"},
@@ -238,55 +242,66 @@ local SKELETON_BONES = {
     {"Torso", "Left Arm"}, {"Torso", "Right Arm"}, {"Torso", "Left Leg"}, {"Torso", "Right Leg"},
 }
 local MouseDriver = {name = "NONE", moveRel = nil, moveAbs = nil}
-local mouseGlobalsScanned = false
-local lastMouseMove = Vector2.zero
-local mouseApiName = "unknown"
-local lastMouseDriverRefreshAt = 0
+local MouseState = {
+    globalsScanned = false,
+    lastMouseMove = Vector2.zero,
+    apiName = "unknown",
+    lastRefreshAt = 0,
+}
 
-local shieldOn = false
-local forceField
-local currentSpeed = 16
-local infJumpOn = false
-local noclipOn = false
-local flyOn = false
-local bodyVelocity, bodyGyro
-local flySpeed = 50
-local jumpEnabled = false
-local jumpValue = 50
-local gravityEnabled = false
-local gravityValue = 196.2
+local MovementState = {
+    shieldOn = false,
+    forceField = nil,
+    currentSpeed = 16,
+    infJumpOn = false,
+    noclipOn = false,
+    flyOn = false,
+    bodyVelocity = nil,
+    bodyGyro = nil,
+    flySpeed = 50,
+    jumpEnabled = false,
+    jumpValue = 50,
+    gravityEnabled = false,
+    gravityValue = 196.2,
+}
 
-local espEnabled = false
-local espDrawings = {}
-local espHighlights = {}
-local showNames = true
-local showDistance = true
-local showBoxes = true
-local showTracers = true
-local showSkeleton = false
-local showTeam = false
-local teamColorEnabled = false
-local enemyColor = Color3.fromRGB(100, 60, 180)
-local teamColor = Color3.fromRGB(80, 160, 255)
-local espColor = Color3.fromRGB(100, 60, 180)
-local charmsEnabled = false
+local ESPState = {
+    enabled = false,
+    drawings = {},
+    highlights = {},
+    showNames = true,
+    showDistance = true,
+    showBoxes = true,
+    showTracers = true,
+    showSkeleton = false,
+    showTeam = false,
+    teamColorEnabled = false,
+    enemyColor = Color3.fromRGB(100, 60, 180),
+    teamColor = Color3.fromRGB(80, 160, 255),
+    espColor = Color3.fromRGB(100, 60, 180),
+    charmsEnabled = false,
+}
 
-local fullbright = false
-local noFog = false
-local antiAFK = false
-local fpsCounter = true
+local MiscState = {
+    fullbright = false,
+    noFog = false,
+    antiAFK = false,
+    fpsCounter = true,
+}
 
-local whitelist = {}
-local trollTargetIndex = 1
-local trollTarget = nil
-local flingPower = 500000
-local orbitSpeed = 6
-local orbitRadius = 10
-local constantFling = false
-local orbitTarget = false
-local headSit = false
-local spinTroll = false
-local invisible = false
+local TrollState = {
+    whitelist = {},
+    trollTargetIndex = 1,
+    trollTarget = nil,
+    flingPower = 500000,
+    orbitSpeed = 6,
+    orbitRadius = 10,
+    constantFling = false,
+    orbitTarget = false,
+    headSit = false,
+    spinTroll = false,
+    invisible = false,
+}
 
 local flingConnection = nil
 local orbitConnection = nil
@@ -303,9 +318,9 @@ local originalLighting = {
 local FOVring = Drawing.new("Circle")
 FOVring.Visible = false
 FOVring.Thickness = 1.5
-FOVring.Color = fovColor
+FOVring.Color = AimState.fovColor
 FOVring.Filled = false
-FOVring.Radius = fov
+FOVring.Radius = AimState.fov
 FOVring.Position = Camera.ViewportSize / 2
 FOVring.Transparency = 0.5
 
@@ -313,51 +328,49 @@ local crosshairDrawings = {}
 for i = 1, 4 do
     local line = Drawing.new("Line")
     line.Visible = false
-    line.Color = crosshairColor
+    line.Color = AimState.crosshairColor
     line.Thickness = 1
     table.insert(crosshairDrawings, line)
 end
 
-local LockStatusGui = nil
-local lockStatusLabel = nil
 
 local function initLockHud()
     local playerGui = LocalPlayer:FindFirstChild("PlayerGui") or LocalPlayer:WaitForChild("PlayerGui", 20)
     if not playerGui then return false end
     local old = playerGui:FindFirstChild("Monarch_LockStatus")
     if old then old:Destroy() end
-    LockStatusGui = Instance.new("ScreenGui")
-    LockStatusGui.Name = "Monarch_LockStatus"
-    LockStatusGui.ResetOnSpawn = false
-    LockStatusGui.IgnoreGuiInset = true
-    LockStatusGui.DisplayOrder = 10000000
-    LockStatusGui.Parent = playerGui
-    lockStatusLabel = Instance.new("TextLabel")
-    lockStatusLabel.Size = UDim2.new(0, 200, 0, 30)
-    lockStatusLabel.Position = UDim2.new(0.5, -100, 0, 10)
-    lockStatusLabel.BackgroundColor3 = Color3.fromRGB(15, 15, 18)
-    lockStatusLabel.BackgroundTransparency = 0.2
-    lockStatusLabel.BorderSizePixel = 0
-    lockStatusLabel.TextColor3 = Color3.fromRGB(100, 60, 180)
-    lockStatusLabel.Font = Enum.Font.GothamBold
-    lockStatusLabel.TextSize = 14
-    lockStatusLabel.Text = ""
-    lockStatusLabel.Visible = false
-    lockStatusLabel.Parent = LockStatusGui
-    Instance.new("UICorner", lockStatusLabel).CornerRadius = UDim.new(0, 6)
+    GUI.LockStatusGui = Instance.new("ScreenGui")
+    GUI.LockStatusGui.Name = "Monarch_LockStatus"
+    GUI.LockStatusGui.ResetOnSpawn = false
+    GUI.LockStatusGui.IgnoreGuiInset = true
+    GUI.LockStatusGui.DisplayOrder = 10000000
+    GUI.LockStatusGui.Parent = playerGui
+    GUI.lockStatusLabel = Instance.new("TextLabel")
+    GUI.lockStatusLabel.Size = UDim2.new(0, 200, 0, 30)
+    GUI.lockStatusLabel.Position = UDim2.new(0.5, -100, 0, 10)
+    GUI.lockStatusLabel.BackgroundColor3 = Color3.fromRGB(15, 15, 18)
+    GUI.lockStatusLabel.BackgroundTransparency = 0.2
+    GUI.lockStatusLabel.BorderSizePixel = 0
+    GUI.lockStatusLabel.TextColor3 = Color3.fromRGB(100, 60, 180)
+    GUI.lockStatusLabel.Font = Enum.Font.GothamBold
+    GUI.lockStatusLabel.TextSize = 14
+    GUI.lockStatusLabel.Text = ""
+    GUI.lockStatusLabel.Visible = false
+    GUI.lockStatusLabel.Parent = GUI.LockStatusGui
+    Instance.new("UICorner", GUI.lockStatusLabel).CornerRadius = UDim.new(0, 6)
     return true
 end
 
 local function setLockHud(text, visible)
-    if not showLockHud then
-        if LockStatusGui then LockStatusGui.Enabled = false end
+    if not AimState.showLockHud then
+        if GUI.LockStatusGui then GUI.LockStatusGui.Enabled = false end
         return
     end
-    if not lockStatusLabel then initLockHud() end
-    if LockStatusGui then LockStatusGui.Enabled = true end
-    if lockStatusLabel then
-        lockStatusLabel.Text = text or ""
-        lockStatusLabel.Visible = visible ~= false
+    if not GUI.lockStatusLabel then initLockHud() end
+    if GUI.LockStatusGui then GUI.LockStatusGui.Enabled = true end
+    if GUI.lockStatusLabel then
+        GUI.lockStatusLabel.Text = text or ""
+        GUI.lockStatusLabel.Visible = visible ~= false
     end
 end
 
@@ -377,62 +390,62 @@ local function initBindToast()
     if not playerGui then return false end
     local old = playerGui:FindFirstChild("Monarch_BindToast")
     if old then old:Destroy() end
-    BindToastGui = Instance.new("ScreenGui")
-    BindToastGui.Name = "Monarch_BindToast"
-    BindToastGui.ResetOnSpawn = false
-    BindToastGui.IgnoreGuiInset = true
-    BindToastGui.DisplayOrder = 10000001
-    BindToastGui.Parent = playerGui
-    BindToastFrame = Instance.new("Frame")
-    BindToastFrame.Name = "Toast"
-    BindToastFrame.Size = UDim2.new(0, 300, 0, 46)
-    BindToastFrame.Position = UDim2.new(0.5, -150, 0, 52)
-    BindToastFrame.BackgroundColor3 = Color3.fromRGB(15, 15, 18)
-    BindToastFrame.BackgroundTransparency = 0.05
-    BindToastFrame.BorderSizePixel = 0
-    BindToastFrame.Visible = false
-    BindToastFrame.Parent = BindToastGui
-    Instance.new("UICorner", BindToastFrame).CornerRadius = UDim.new(0, 8)
+    GUI.BindToastGui = Instance.new("ScreenGui")
+    GUI.BindToastGui.Name = "Monarch_BindToast"
+    GUI.BindToastGui.ResetOnSpawn = false
+    GUI.BindToastGui.IgnoreGuiInset = true
+    GUI.BindToastGui.DisplayOrder = 10000001
+    GUI.BindToastGui.Parent = playerGui
+    GUI.BindToastFrame = Instance.new("Frame")
+    GUI.BindToastFrame.Name = "Toast"
+    GUI.BindToastFrame.Size = UDim2.new(0, 300, 0, 46)
+    GUI.BindToastFrame.Position = UDim2.new(0.5, -150, 0, 52)
+    GUI.BindToastFrame.BackgroundColor3 = Color3.fromRGB(15, 15, 18)
+    GUI.BindToastFrame.BackgroundTransparency = 0.05
+    GUI.BindToastFrame.BorderSizePixel = 0
+    GUI.BindToastFrame.Visible = false
+    GUI.BindToastFrame.Parent = GUI.BindToastGui
+    Instance.new("UICorner", GUI.BindToastFrame).CornerRadius = UDim.new(0, 8)
     local stroke = Instance.new("UIStroke")
     stroke.Color = Color3.fromRGB(100, 60, 180)
     stroke.Thickness = 1.5
-    stroke.Parent = BindToastFrame
-    BindToastLabel = Instance.new("TextLabel")
-    BindToastLabel.Size = UDim2.new(1, -16, 1, 0)
-    BindToastLabel.Position = UDim2.new(0, 8, 0, 0)
-    BindToastLabel.BackgroundTransparency = 1
-    BindToastLabel.Font = Enum.Font.GothamBold
-    BindToastLabel.TextSize = 16
-    BindToastLabel.Text = ""
-    BindToastLabel.Parent = BindToastFrame
+    stroke.Parent = GUI.BindToastFrame
+    GUI.BindToastLabel = Instance.new("TextLabel")
+    GUI.BindToastLabel.Size = UDim2.new(1, -16, 1, 0)
+    GUI.BindToastLabel.Position = UDim2.new(0, 8, 0, 0)
+    GUI.BindToastLabel.BackgroundTransparency = 1
+    GUI.BindToastLabel.Font = Enum.Font.GothamBold
+    GUI.BindToastLabel.TextSize = 16
+    GUI.BindToastLabel.Text = ""
+    GUI.BindToastLabel.Parent = GUI.BindToastFrame
     return true
 end
 
 local function showBindToggleToast(featureName, enabled)
     pcall(function()
-        if not BindToastFrame or not BindToastLabel or not BindToastGui.Parent then
+        if not GUI.BindToastFrame or not GUI.BindToastLabel or not GUI.BindToastGui.Parent then
             if not initBindToast() then
                 notify("Monarch", featureName .. ": " .. (enabled and "ENABLED" or "DISABLED"), 3)
                 return
             end
         end
         local playerGui = LocalPlayer:FindFirstChild("PlayerGui")
-        if playerGui and BindToastGui.Parent ~= playerGui then
-            BindToastGui.Parent = playerGui
+        if playerGui and GUI.BindToastGui.Parent ~= playerGui then
+            GUI.BindToastGui.Parent = playerGui
         end
-        BindToastGui.Enabled = true
-        bindToastToken = bindToastToken + 1
-        local token = bindToastToken
+        GUI.BindToastGui.Enabled = true
+        GUI.bindToastToken = GUI.bindToastToken + 1
+        local token = GUI.bindToastToken
         local stateText = enabled and "ENABLED" or "DISABLED"
         local accent = enabled and Color3.fromRGB(70, 220, 110) or Color3.fromRGB(220, 70, 70)
-        BindToastLabel.Text = featureName .. ": " .. stateText
-        BindToastLabel.TextColor3 = accent
-        BindToastFrame.Visible = true
-        local stroke = BindToastFrame:FindFirstChild("UIStroke")
+        GUI.BindToastLabel.Text = featureName .. ": " .. stateText
+        GUI.BindToastLabel.TextColor3 = accent
+        GUI.BindToastFrame.Visible = true
+        local stroke = GUI.BindToastFrame:FindFirstChild("UIStroke")
         if stroke then stroke.Color = accent end
         task.delay(2, function()
-            if bindToastToken ~= token or not BindToastFrame then return end
-            BindToastFrame.Visible = false
+            if GUI.bindToastToken ~= token or not GUI.BindToastFrame then return end
+            GUI.BindToastFrame.Visible = false
         end)
     end)
 end
@@ -441,10 +454,10 @@ task.spawn(initBindToast)
 
 local function updateCrosshair()
     local center = Camera.ViewportSize / 2
-    local size = crosshairSize
+    local size = AimState.crosshairSize
     for i, line in ipairs(crosshairDrawings) do
-        line.Visible = crosshairEnabled
-        line.Color = crosshairColor
+        line.Visible = AimState.crosshairEnabled
+        line.Color = AimState.crosshairColor
         if i == 1 then
             line.From = Vector2.new(center.X - size, center.Y)
             line.To = Vector2.new(center.X - 2, center.Y)
@@ -463,9 +476,9 @@ end
 
 local function updateDrawings()
     FOVring.Position = Camera.ViewportSize / 2
-    FOVring.Radius = fov
-    FOVring.Color = fovColor
-    FOVring.Visible = aimbotOn and showFOV
+    FOVring.Radius = AimState.fov
+    FOVring.Color = AimState.fovColor
+    FOVring.Visible = AimState.aimbotOn and AimState.showFOV
     updateCrosshair()
 end
 
@@ -523,8 +536,8 @@ local function lookupInputMouseMove()
 end
 
 local function refreshMouseDriver()
-    if mouseGlobalsScanned then return end
-    mouseGlobalsScanned = true
+    if MouseState.globalsScanned then return end
+    MouseState.globalsScanned = true
     MouseDriver.name = "NONE"
     MouseDriver.moveRel = nil
     MouseDriver.moveAbs = nil
@@ -568,7 +581,7 @@ local function refreshMouseDriver()
             pcall(function() VirtualInputManager:SendMouseMoveEvent(x, y, game) end)
         end
     end
-    mouseApiName = MouseDriver.name
+    MouseState.apiName = MouseDriver.name
 end
 
 refreshMouseDriver()
@@ -580,23 +593,23 @@ local function mouseMoveRel(dx, dy)
     if ix == 0 and math.abs(dx) >= 1 then ix = dx > 0 and 1 or -1 end
     if iy == 0 and math.abs(dy) >= 1 then iy = dy > 0 and 1 or -1 end
     if ix == 0 and iy == 0 then return end
-    lastMouseMove = Vector2.new(ix, iy)
-    if tick() - lastMouseDriverRefreshAt > 3 then
+    MouseState.lastMouseMove = Vector2.new(ix, iy)
+    if tick() - MouseState.lastRefreshAt > 3 then
         refreshMouseDriver()
-        lastMouseDriverRefreshAt = tick()
+        MouseState.lastRefreshAt = tick()
     end
     if MouseDriver.moveRel then pcall(MouseDriver.moveRel, ix, iy) end
 end
 
 local function isOnTeam(plr)
-    if not teamCheck then return false end
+    if not AimState.teamCheck then return false end
     local localTeam = LocalPlayer.Team
     local targetTeam = plr.Team
     return localTeam and targetTeam and localTeam == targetTeam
 end
 
 local function isWallBetween(part1, part2)
-    if not wallCheck then return false end
+    if not AimState.wallCheck then return false end
     local ray = Ray.new(part1.Position, (part2.Position - part1.Position).Unit * (part1.Position - part2.Position).Magnitude)
     local hit, _ = Workspace:FindPartOnRay(ray, LocalPlayer.Character)
     return hit ~= nil
@@ -610,12 +623,12 @@ local function getClosestPlayerInFOV()
         if plr ~= LocalPlayer and plr.Character then
             if isWhitelisted(plr) then continue end
             if isOnTeam(plr) then continue end
-            local part = plr.Character:FindFirstChild(targetPart)
+            local part = plr.Character:FindFirstChild(AimState.targetPart)
             if part then
-                if wallCheck and isWallBetween(Camera, part) then continue end
+                if AimState.wallCheck and isWallBetween(Camera, part) then continue end
                 local screenPos, onScreen = Camera:WorldToViewportPoint(part.Position)
                 local dist = (Vector2.new(screenPos.X, screenPos.Y) - center).Magnitude
-                if onScreen and dist < last and dist < fov then
+                if onScreen and dist < last and dist < AimState.fov then
                     last = dist
                     closest = plr
                 end
@@ -626,16 +639,16 @@ local function getClosestPlayerInFOV()
 end
 
 local function getPredictedPosition(target)
-    if prediction == 0 then return target.Position end
+    if AimState.prediction == 0 then return target.Position end
     local velocity = target.Velocity
-    return target.Position + (velocity * prediction)
+    return target.Position + (velocity * AimState.prediction)
 end
 
 local function lookAt(targetPos)
     local lookVector = (targetPos - Camera.CFrame.Position).Unit
     local newCFrame = CFrame.new(Camera.CFrame.Position, Camera.CFrame.Position + lookVector)
-    if smoothness > 0 then
-        Camera.CFrame = Camera.CFrame:Lerp(newCFrame, smoothness)
+    if AimState.smoothness > 0 then
+        Camera.CFrame = Camera.CFrame:Lerp(newCFrame, AimState.smoothness)
     else
         Camera.CFrame = newCFrame
     end
@@ -643,11 +656,11 @@ end
 
 local function aimAtTarget(target)
     if not target or not target.Character then return end
-    local part = target.Character:FindFirstChild(targetPart)
+    local part = target.Character:FindFirstChild(AimState.targetPart)
     if part then
         local predictedPos = getPredictedPosition(part)
         lookAt(predictedPos)
-        if showLockHud then
+        if AimState.showLockHud then
             setLockHud("LOCKED: " .. target.Name, true)
         end
     end
@@ -656,7 +669,7 @@ end
 local lastTriggerbotAt = 0
 
 local function checkTriggerbot()
-    if not triggerbotOn then return end
+    if not AimState.triggerbotOn then return end
     local mousePos = UserInputService:GetMouseLocation()
     for _, plr in ipairs(Players:GetPlayers()) do
         if plr ~= LocalPlayer and plr.Character then
@@ -667,9 +680,9 @@ local function checkTriggerbot()
                 local screenPos, onScreen = Camera:WorldToViewportPoint(head.Position)
                 if onScreen then
                     local dist = (Vector2.new(screenPos.X, screenPos.Y) - mousePos).Magnitude
-                    if dist < triggerbotRadius then
-                        if triggerbotWallCheck and isWallBetween(Camera, head) then continue end
-                        if tick() - lastTriggerbotAt >= triggerbotDelay then
+                    if dist < AimState.triggerbotRadius then
+                        if AimState.triggerbotWallCheck and isWallBetween(Camera, head) then continue end
+                        if tick() - lastTriggerbotAt >= AimState.triggerbotDelay then
                             lastTriggerbotAt = tick()
                             mouse1click()
                         end
@@ -683,9 +696,9 @@ end
 local lastAutoShootAt = 0
 
 local function autoShoot()
-    if not autoShootOn then return end
-    if autoShootMode == "On Lock" and currentTargetPlayer then
-        if tick() - lastAutoShootAt >= autoShootInterval then
+    if not AimState.autoShootOn then return end
+    if AimState.autoShootMode == "On Lock" and AimState.currentTargetPlayer then
+        if tick() - lastAutoShootAt >= AimState.autoShootInterval then
             lastAutoShootAt = tick()
             mouse1click()
         end
@@ -700,18 +713,18 @@ local function cycleTrollTarget()
         end
     end
     if #targets == 0 then
-        trollTarget = nil
+        TrollState.trollTarget = nil
         return
     end
-    trollTargetIndex = trollTargetIndex % #targets + 1
-    trollTarget = targets[trollTargetIndex]
+    TrollState.trollTargetIndex = TrollState.trollTargetIndex % #targets + 1
+    TrollState.trollTarget = targets[TrollState.trollTargetIndex]
 end
 
 local function getTrollTarget()
-    if not trollTarget or not trollTarget.Character then
+    if not TrollState.trollTarget or not TrollState.trollTarget.Character then
         cycleTrollTarget()
     end
-    return trollTarget
+    return TrollState.trollTarget
 end
 
 local function clearFlingForce()
@@ -729,7 +742,7 @@ local function flingTargetOnce(target)
         localRoot.CFrame = targetRoot.CFrame * CFrame.new(0, 0, 1)
         local bv = Instance.new("BodyVelocity")
         bv.MaxForce = Vector3.new(math.huge, math.huge, math.huge)
-        bv.Velocity = Vector3.new(0, flingPower, 0)
+        bv.Velocity = Vector3.new(0, TrollState.flingPower, 0)
         bv.Parent = localRoot
         game:GetService("Debris"):AddItem(bv, 0.1)
     end
@@ -737,9 +750,9 @@ end
 
 local function startConstantFling()
     clearFlingForce()
-    constantFling = true
+    TrollState.constantFling = true
     flingConnection = RunService.Heartbeat:Connect(function()
-        if not constantFling then return end
+        if not TrollState.constantFling then return end
         local target = getTrollTarget()
         if target then flingTargetOnce(target) end
     end)
@@ -754,17 +767,17 @@ end
 
 local function startOrbit()
     clearOrbit()
-    orbitTarget = true
+    TrollState.orbitTarget = true
     local startTime = tick()
     orbitConnection = RunService.Heartbeat:Connect(function()
-        if not orbitTarget then return end
+        if not TrollState.orbitTarget then return end
         local target = getTrollTarget()
         if not target or not target.Character then return end
         local localRoot = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
         local targetRoot = target.Character:FindFirstChild("HumanoidRootPart")
         if localRoot and targetRoot then
-            local angle = (tick() - startTime) * orbitSpeed
-            local offset = Vector3.new(math.cos(angle) * orbitRadius, 0, math.sin(angle) * orbitRadius)
+            local angle = (tick() - startTime) * TrollState.orbitSpeed
+            local offset = Vector3.new(math.cos(angle) * TrollState.orbitRadius, 0, math.sin(angle) * TrollState.orbitRadius)
             localRoot.CFrame = targetRoot.CFrame * CFrame.new(offset)
         end
     end)
@@ -779,9 +792,9 @@ end
 
 local function startSpinTroll()
     clearSpinTroll()
-    spinTroll = true
+    TrollState.spinTroll = true
     spinConnection = RunService.Heartbeat:Connect(function()
-        if not spinTroll then return end
+        if not TrollState.spinTroll then return end
         local localRoot = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
         if localRoot then
             localRoot.CFrame = localRoot.CFrame * CFrame.Angles(0, math.rad(15), 0)
@@ -798,12 +811,12 @@ end
 
 local function startHeadSit()
     clearHeadSit()
-    headSit = true
+    TrollState.headSit = true
     headSitConnection = RunService.Heartbeat:Connect(function()
-        if not headSit then return end
-        if not trollTarget or not trollTarget.Character then return end
+        if not TrollState.headSit then return end
+        if not TrollState.trollTarget or not TrollState.trollTarget.Character then return end
         local localRoot = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
-        local targetHead = trollTarget.Character:FindFirstChild("Head")
+        local targetHead = TrollState.trollTarget.Character:FindFirstChild("Head")
         if localRoot and targetHead then
             localRoot.CFrame = targetHead.CFrame * CFrame.new(0, 0, 0)
         end
@@ -815,13 +828,13 @@ local function updateInvisibleState()
     if not char then return end
     for _, part in ipairs(char:GetDescendants()) do
         if part:IsA("BasePart") then
-            part.Transparency = invisible and 1 or 0
+            part.Transparency = TrollState.invisible and 1 or 0
         end
     end
 end
 
 local function updateLightingState()
-    if fullbright then
+    if MiscState.fullbright then
         Lighting.Brightness = 2
         Lighting.Ambient = Color3.new(1, 1, 1)
         Lighting.OutdoorAmbient = Color3.new(1, 1, 1)
@@ -830,7 +843,7 @@ local function updateLightingState()
         Lighting.Ambient = originalLighting.Ambient
         Lighting.OutdoorAmbient = originalLighting.OutdoorAmbient
     end
-    if noFog then
+    if MiscState.noFog then
         Lighting.FogEnd = 100000
         Lighting.FogStart = 0
     else
@@ -844,12 +857,12 @@ local function createESP(plr)
     local box = Drawing.new("Square")
     box.Thickness = 1
     box.Filled = false
-    box.Color = espColor
+    box.Color = ESPState.espColor
     box.Transparency = 0.8
     box.Visible = false
     local tracer = Drawing.new("Line")
     tracer.Thickness = 1
-    tracer.Color = espColor
+    tracer.Color = ESPState.espColor
     tracer.Transparency = 0.7
     tracer.Visible = false
     local nameText = Drawing.new("Text")
@@ -866,29 +879,29 @@ local function createESP(plr)
     distText.Color = Color3.fromRGB(200, 180, 255)
     distText.Font = 2
     distText.Visible = false
-    espDrawings[plr] = {
+    ESPState.drawings[plr] = {
         box = box,
         tracer = tracer,
         name = nameText,
         dist = distText
     }
-    if charmsEnabled then
+    if ESPState.charmsEnabled then
         local highlight = Instance.new("Highlight")
-        highlight.FillColor = espColor
-        highlight.OutlineColor = espColor
+        highlight.FillColor = ESPState.espColor
+        highlight.OutlineColor = ESPState.espColor
         highlight.FillTransparency = 0.5
         highlight.OutlineTransparency = 0
         highlight.Enabled = false
         highlight.Adornee = plr.Character
         highlight.Parent = plr.Character
-        espHighlights[plr] = highlight
+        ESPState.highlights[plr] = highlight
     end
-    if showSkeleton then
+    if ESPState.showSkeleton then
         espSkeletonLines[plr] = {}
         for _, bonePair in ipairs(SKELETON_BONES) do
             local line = Drawing.new("Line")
             line.Thickness = 1
-            line.Color = espColor
+            line.Color = ESPState.espColor
             line.Transparency = 0.6
             line.Visible = false
             table.insert(espSkeletonLines[plr], line)
@@ -897,15 +910,15 @@ local function createESP(plr)
 end
 
 local function removeESP(plr)
-    if espDrawings[plr] then
-        for _, v in pairs(espDrawings[plr]) do
+    if ESPState.drawings[plr] then
+        for _, v in pairs(ESPState.drawings[plr]) do
             v:Remove()
         end
-        espDrawings[plr] = nil
+        ESPState.drawings[plr] = nil
     end
-    if espHighlights[plr] then
-        espHighlights[plr]:Destroy()
-        espHighlights[plr] = nil
+    if ESPState.highlights[plr] then
+        ESPState.highlights[plr]:Destroy()
+        ESPState.highlights[plr] = nil
     end
     if espSkeletonLines[plr] then
         for _, line in ipairs(espSkeletonLines[plr]) do
@@ -916,20 +929,20 @@ local function removeESP(plr)
 end
 
 local function refreshCharms()
-    for plr, highlight in pairs(espHighlights) do
+    for plr, highlight in pairs(ESPState.highlights) do
         if highlight then
-            highlight.Enabled = charmsEnabled and espEnabled
-            if teamColorEnabled then
+            highlight.Enabled = ESPState.charmsEnabled and ESPState.enabled
+            if ESPState.teamColorEnabled then
                 if isOnTeam(plr) then
-                    highlight.FillColor = teamColor
-                    highlight.OutlineColor = teamColor
+                    highlight.FillColor = ESPState.teamColor
+                    highlight.OutlineColor = ESPState.teamColor
                 else
-                    highlight.FillColor = enemyColor
-                    highlight.OutlineColor = enemyColor
+                    highlight.FillColor = ESPState.enemyColor
+                    highlight.OutlineColor = ESPState.enemyColor
                 end
             else
-                highlight.FillColor = espColor
-                highlight.OutlineColor = espColor
+                highlight.FillColor = ESPState.espColor
+                highlight.OutlineColor = ESPState.espColor
             end
         end
     end
@@ -943,23 +956,23 @@ Players.PlayerRemoving:Connect(removeESP)
 
 RunService.Heartbeat:Connect(function()
     local hum = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid")
-    if hum then hum.WalkSpeed = currentSpeed end
+    if hum then hum.WalkSpeed = MovementState.currentSpeed end
 end)
 
 UserInputService.JumpRequest:Connect(function()
-    if not infJumpOn then return end
+    if not MovementState.infJumpOn then return end
     local char = LocalPlayer.Character
     if not char then return end
     local hum = char:FindFirstChild("Humanoid")
     local root = char:FindFirstChild("HumanoidRootPart")
     if hum and root and hum.Health > 0 then
-        hum.JumpPower = jumpValue
-        root.Velocity = Vector3.new(root.Velocity.X, jumpValue, root.Velocity.Z)
+        hum.JumpPower = MovementState.jumpValue
+        root.Velocity = Vector3.new(root.Velocity.X, MovementState.jumpValue, root.Velocity.Z)
     end
 end)
 
 RunService.Stepped:Connect(function()
-    if not noclipOn then return end
+    if not MovementState.noclipOn then return end
     local char = LocalPlayer.Character
     if char then
         for _, part in ipairs(char:GetDescendants()) do
@@ -971,7 +984,7 @@ RunService.Stepped:Connect(function()
 end)
 
 RunService.RenderStepped:Connect(function(dt)
-    if not flyOn then return end
+    if not MovementState.flyOn then return end
     local char = LocalPlayer.Character
     local root = char and char:FindFirstChild("HumanoidRootPart")
     if not root then return end
@@ -984,55 +997,55 @@ RunService.RenderStepped:Connect(function(dt)
     if UserInputService:IsKeyDown(Enum.KeyCode.LeftControl) then moveDir -= Vector3.new(0, 1, 0) end
     if moveDir.Magnitude > 0 then
         moveDir = moveDir.Unit
-        root.CFrame = root.CFrame + (moveDir * flySpeed * dt)
+        root.CFrame = root.CFrame + (moveDir * MovementState.flySpeed * dt)
     end
     root.CFrame = CFrame.new(root.Position) * Camera.CFrame.Rotation
 end)
 
 RunService.RenderStepped:Connect(function()
     updateDrawings()
-    if aimbotOn and isAming then
-        if lockMode == "Hold" or toggleActive then
-            currentTargetPlayer = getClosestPlayerInFOV()
-            if currentTargetPlayer then
-                aimAtTarget(currentTargetPlayer)
+    if AimState.aimbotOn and AimState.isAming then
+        if AimState.lockMode == "Hold" or AimState.toggleActive then
+            AimState.currentTargetPlayer = getClosestPlayerInFOV()
+            if AimState.currentTargetPlayer then
+                aimAtTarget(AimState.currentTargetPlayer)
             else
                 setLockHud("", false)
             end
         end
     else
         setLockHud("", false)
-        currentTargetPlayer = nil
+        AimState.currentTargetPlayer = nil
     end
-    checkTriggerbot()
-    autoShoot()
+    if AimState.triggerbotOn then checkTriggerbot() end
+    if AimState.autoShootOn then autoShoot() end
 end)
 
 LocalPlayer.CharacterAdded:Connect(function(newChar)
     task.wait(0.5)
     local hum = newChar:WaitForChild("Humanoid")
-    hum.WalkSpeed = currentSpeed
-    if shieldOn then
-        forceField = Instance.new("ForceField")
-        forceField.Parent = newChar
+    hum.WalkSpeed = MovementState.currentSpeed
+    if MovementState.shieldOn then
+        MovementState.forceField = Instance.new("ForceField")
+        MovementState.forceField.Parent = newChar
     end
-    if flyOn then
-        flyOn = false
-        if bodyVelocity then bodyVelocity:Destroy() bodyVelocity = nil end
-        if bodyGyro then bodyGyro:Destroy() bodyGyro = nil end
+    if MovementState.flyOn then
+        MovementState.flyOn = false
+        if MovementState.bodyVelocity then MovementState.bodyVelocity:Destroy() MovementState.bodyVelocity = nil end
+        if MovementState.bodyGyro then MovementState.bodyGyro:Destroy() MovementState.bodyGyro = nil end
     end
-    if invisible then updateInvisibleState() end
+    if TrollState.invisible then updateInvisibleState() end
 end)
 
 RunService.RenderStepped:Connect(function()
-    if not espEnabled then
-        for _, data in pairs(espDrawings) do
+    if not ESPState.enabled then
+        for _, data in pairs(ESPState.drawings) do
             data.box.Visible = false
             data.tracer.Visible = false
             data.name.Visible = false
             data.dist.Visible = false
         end
-        for _, highlight in pairs(espHighlights) do
+        for _, highlight in pairs(ESPState.highlights) do
             highlight.Enabled = false
         end
         for _, lines in pairs(espSkeletonLines) do
@@ -1042,13 +1055,13 @@ RunService.RenderStepped:Connect(function()
         end
         return
     end
-    for plr, data in pairs(espDrawings) do
-        if isWhitelisted(plr) and not showTeam then
+    for plr, data in pairs(ESPState.drawings) do
+        if isWhitelisted(plr) and not ESPState.showTeam then
             data.box.Visible = false
             data.tracer.Visible = false
             data.name.Visible = false
             data.dist.Visible = false
-            if espHighlights[plr] then espHighlights[plr].Enabled = false end
+            if ESPState.highlights[plr] then ESPState.highlights[plr].Enabled = false end
             if espSkeletonLines[plr] then
                 for _, line in ipairs(espSkeletonLines[plr]) do
                     line.Visible = false
@@ -1067,34 +1080,34 @@ RunService.RenderStepped:Connect(function()
                 if onScreen then
                     local height = math.abs(headPos.Y - legPos.Y)
                     local width = height * 0.45
-                    local color = espColor
-                    if teamColorEnabled then
-                        color = isOnTeam(plr) and teamColor or enemyColor
+                    local color = ESPState.espColor
+                    if ESPState.teamColorEnabled then
+                        color = isOnTeam(plr) and ESPState.teamColor or ESPState.enemyColor
                     end
                     data.box.Color = color
                     data.tracer.Color = color
-                    if showBoxes then
+                    if ESPState.showBoxes then
                         data.box.Size = Vector2.new(width, height)
                         data.box.Position = Vector2.new(rootPos.X - width/2, rootPos.Y - height/2)
                         data.box.Visible = true
                     else
                         data.box.Visible = false
                     end
-                    if showTracers then
+                    if ESPState.showTracers then
                         data.tracer.From = Vector2.new(Camera.ViewportSize.X / 2, Camera.ViewportSize.Y)
                         data.tracer.To = Vector2.new(rootPos.X, rootPos.Y)
                         data.tracer.Visible = true
                     else
                         data.tracer.Visible = false
                     end
-                    if showNames then
+                    if ESPState.showNames then
                         data.name.Text = plr.Name
                         data.name.Position = Vector2.new(rootPos.X, rootPos.Y - height/2 - 18)
                         data.name.Visible = true
                     else
                         data.name.Visible = false
                     end
-                    if showDistance then
+                    if ESPState.showDistance then
                         local distance = (LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")) and
                             (LocalPlayer.Character.HumanoidRootPart.Position - hrp.Position).Magnitude or 0
                         data.dist.Text = math.floor(distance) .. " studs"
@@ -1103,7 +1116,7 @@ RunService.RenderStepped:Connect(function()
                     else
                         data.dist.Visible = false
                     end
-                    if showSkeleton and espSkeletonLines[plr] then
+                    if ESPState.showSkeleton and espSkeletonLines[plr] then
                         for i, bonePair in ipairs(SKELETON_BONES) do
                             local part1 = plr.Character:FindFirstChild(bonePair[1])
                             local part2 = plr.Character:FindFirstChild(bonePair[2])
@@ -1166,33 +1179,33 @@ RunService.RenderStepped:Connect(function()
 end)
 
 LocalPlayer.Idled:Connect(function()
-    if antiAFK then
+    if MiscState.antiAFK then
         VirtualUser:CaptureFocus()
         VirtualUser:ClickButton2(Vector2.new(0, 0))
     end
 end)
 
 local function startSpectate(target)
-    if spectating then return end
+    if GUI.spectating then return end
     if not target or not target.Character then return end
-    spectating = true
-    spectateTarget = target
-    originalCameraSubject = Camera.CameraSubject
-    originalCameraType = Camera.CameraType
+    GUI.spectating = true
+    GUI.spectateTarget = target
+    GUI.originalCameraSubject = Camera.CameraSubject
+    GUI.originalCameraType = Camera.CameraType
     Camera.CameraType = Enum.CameraType.Fixed
     Camera.CameraSubject = target.Character:FindFirstChild("Humanoid")
     notify("Monarch", "Spectating: " .. target.Name, 3)
 end
 
 local function stopSpectate()
-    if not spectating then return end
-    spectating = false
-    spectateTarget = nil
-    if originalCameraSubject then
-        Camera.CameraSubject = originalCameraSubject
+    if not GUI.spectating then return end
+    GUI.spectating = false
+    GUI.spectateTarget = nil
+    if GUI.originalCameraSubject then
+        Camera.CameraSubject = GUI.originalCameraSubject
     end
-    if originalCameraType then
-        Camera.CameraType = originalCameraType
+    if GUI.originalCameraType then
+        Camera.CameraType = GUI.originalCameraType
     end
     notify("Monarch", "Stopped spectating", 2)
 end
@@ -1266,14 +1279,14 @@ local function saveConfigIndex(index)
 end
 
 local function refreshConfigList()
-    savedConfigNames = {}
+    GUI.savedConfigNames = {}
     if not hasFileSystem then return end
     pcall(function()
         local files = listfiles(Library.Folders.Configs)
         for _, file in ipairs(files) do
             local name = file:match("([^/\\]+)$")
             if name and name:sub(-5) == ".json" then
-                table.insert(savedConfigNames, name:sub(1, -6))
+                table.insert(GUI.savedConfigNames, name:sub(1, -6))
             end
         end
     end)
@@ -1395,7 +1408,7 @@ AimMainSection:Toggle({
     Flag = "AimbotEnabled",
     Default = false,
     Callback = function(Value)
-        aimbotOn = Value
+        AimState.aimbotOn = Value
     end
 })
 
@@ -1417,7 +1430,7 @@ AimMainSection:Slider({
     Default = 0.25,
     Suffix = "",
     Callback = function(Value)
-        smoothness = Value
+        AimState.smoothness = Value
     end
 })
 
@@ -1429,7 +1442,7 @@ AimMainSection:Slider({
     Default = 150,
     Suffix = "",
     Callback = function(Value)
-        fov = Value
+        AimState.fov = Value
     end
 })
 
@@ -1438,7 +1451,7 @@ AimMainSection:Toggle({
     Flag = "ShowFOV",
     Default = true,
     Callback = function(Value)
-        showFOV = Value
+        AimState.showFOV = Value
     end
 })
 
@@ -1447,7 +1460,7 @@ AimMainSection:Toggle({
     Flag = "WallCheck",
     Default = true,
     Callback = function(Value)
-        wallCheck = Value
+        AimState.wallCheck = Value
     end
 })
 
@@ -1456,7 +1469,7 @@ AimMainSection:Toggle({
     Flag = "TeamCheck",
     Default = true,
     Callback = function(Value)
-        teamCheck = Value
+        AimState.teamCheck = Value
     end
 })
 
@@ -1467,7 +1480,7 @@ AimMainSection:Dropdown({
     Items = {"Head", "HumanoidRootPart", "UpperTorso", "LowerTorso"},
     Multi = false,
     Callback = function(Value)
-        targetPart = Value[1]
+        AimState.targetPart = Value[1]
     end
 })
 
@@ -1478,7 +1491,7 @@ AimMainSection:Dropdown({
     Items = {"Hold", "Toggle"},
     Multi = false,
     Callback = function(Value)
-        lockMode = Value[1]
+        AimState.lockMode = Value[1]
     end
 })
 
@@ -1510,7 +1523,7 @@ AimMainSection:Slider({
     Default = 0,
     Suffix = "s",
     Callback = function(Value)
-        prediction = Value
+        AimState.prediction = Value
     end
 })
 
@@ -1519,7 +1532,7 @@ AimMainSection:Toggle({
     Flag = "SilentAim",
     Default = false,
     Callback = function(Value)
-        silentAim = Value
+        AimState.silentAim = Value
     end
 })
 
@@ -1528,7 +1541,7 @@ AimMainSection:Toggle({
     Flag = "ShowLockHud",
     Default = true,
     Callback = function(Value)
-        showLockHud = Value
+        AimState.showLockHud = Value
     end
 })
 
@@ -1539,7 +1552,7 @@ AimExtraSection:Toggle({
     Flag = "AutoShoot",
     Default = false,
     Callback = function(Value)
-        autoShootOn = Value
+        AimState.autoShootOn = Value
     end
 })
 
@@ -1550,7 +1563,7 @@ AimExtraSection:Dropdown({
     Items = {"On Lock", "Always"},
     Multi = false,
     Callback = function(Value)
-        autoShootMode = Value[1]
+        AimState.autoShootMode = Value[1]
     end
 })
 
@@ -1562,7 +1575,7 @@ AimExtraSection:Slider({
     Default = 0.1,
     Suffix = "s",
     Callback = function(Value)
-        autoShootInterval = Value
+        AimState.autoShootInterval = Value
     end
 })
 
@@ -1571,7 +1584,7 @@ AimExtraSection:Toggle({
     Flag = "Triggerbot",
     Default = false,
     Callback = function(Value)
-        triggerbotOn = Value
+        AimState.triggerbotOn = Value
     end
 })
 
@@ -1583,7 +1596,7 @@ AimExtraSection:Slider({
     Default = 20,
     Suffix = "",
     Callback = function(Value)
-        triggerbotRadius = Value
+        AimState.triggerbotRadius = Value
     end
 })
 
@@ -1595,7 +1608,7 @@ AimExtraSection:Slider({
     Default = 0.05,
     Suffix = "s",
     Callback = function(Value)
-        triggerbotDelay = Value
+        AimState.triggerbotDelay = Value
     end
 })
 
@@ -1604,7 +1617,7 @@ AimExtraSection:Toggle({
     Flag = "TriggerbotWallCheck",
     Default = true,
     Callback = function(Value)
-        triggerbotWallCheck = Value
+        AimState.triggerbotWallCheck = Value
     end
 })
 
@@ -1613,7 +1626,7 @@ AimExtraSection:Toggle({
     Flag = "VelocityResolver",
     Default = false,
     Callback = function(Value)
-        velocityResolver = Value
+        AimState.velocityResolver = Value
     end
 })
 
@@ -1622,7 +1635,7 @@ AimExtraSection:Toggle({
     Flag = "Crosshair",
     Default = false,
     Callback = function(Value)
-        crosshairEnabled = Value
+        AimState.crosshairEnabled = Value
     end
 })
 
@@ -1634,7 +1647,7 @@ AimExtraSection:Slider({
     Default = 8,
     Suffix = "",
     Callback = function(Value)
-        crosshairSize = Value
+        AimState.crosshairSize = Value
     end
 })
 
@@ -1643,7 +1656,7 @@ AimExtraSection:Label("FOV Color"):Colorpicker({
     Flag = "FOVColor",
     Default = Color3.fromRGB(100, 60, 180),
     Callback = function(Value)
-        fovColor = Value
+        AimState.fovColor = Value
     end
 })
 
@@ -1652,7 +1665,7 @@ AimExtraSection:Label("Crosshair Color"):Colorpicker({
     Flag = "CrosshairColor",
     Default = Color3.fromRGB(255, 255, 255),
     Callback = function(Value)
-        crosshairColor = Value
+        AimState.crosshairColor = Value
     end
 })
 
@@ -1666,7 +1679,7 @@ ESPSection:Toggle({
     Flag = "ESPEnabled",
     Default = false,
     Callback = function(Value)
-        espEnabled = Value
+        ESPState.enabled = Value
     end
 })
 
@@ -1675,7 +1688,7 @@ ESPSection:Toggle({
     Flag = "ShowTeammates",
     Default = false,
     Callback = function(Value)
-        showTeam = Value
+        ESPState.showTeam = Value
     end
 })
 
@@ -1684,7 +1697,7 @@ ESPSection:Toggle({
     Flag = "CharmsEnabled",
     Default = false,
     Callback = function(Value)
-        charmsEnabled = Value
+        ESPState.charmsEnabled = Value
         refreshCharms()
     end
 })
@@ -1694,7 +1707,7 @@ ESPSection:Toggle({
     Flag = "BoxESP",
     Default = false,
     Callback = function(Value)
-        showBoxes = Value
+        ESPState.showBoxes = Value
     end
 })
 
@@ -1703,7 +1716,7 @@ ESPSection:Toggle({
     Flag = "NameESP",
     Default = false,
     Callback = function(Value)
-        showNames = Value
+        ESPState.showNames = Value
     end
 })
 
@@ -1712,7 +1725,7 @@ ESPSection:Toggle({
     Flag = "Tracers",
     Default = false,
     Callback = function(Value)
-        showTracers = Value
+        ESPState.showTracers = Value
     end
 })
 
@@ -1721,7 +1734,7 @@ ESPSection:Toggle({
     Flag = "DistanceESP",
     Default = false,
     Callback = function(Value)
-        showDistance = Value
+        ESPState.showDistance = Value
     end
 })
 
@@ -1730,7 +1743,7 @@ ESPSection:Toggle({
     Flag = "ShowTeammates",
     Default = false,
     Callback = function(Value)
-        showTeam = Value
+        ESPState.showTeam = Value
     end
 })
 
@@ -1739,7 +1752,7 @@ ESPSection:Label("ESP Color"):Colorpicker({
     Flag = "ESPColor",
     Default = Color3.fromRGB(100, 60, 180),
     Callback = function(Value)
-        espColor = Value
+        ESPState.espColor = Value
         refreshCharms()
     end
 })
@@ -1749,7 +1762,7 @@ ESPSection:Toggle({
     Flag = "TeamColorESP",
     Default = false,
     Callback = function(Value)
-        teamColorEnabled = Value
+        ESPState.teamColorEnabled = Value
         refreshCharms()
     end
 })
@@ -1759,7 +1772,7 @@ ESPSection:Label("Enemy Color"):Colorpicker({
     Flag = "EnemyColor",
     Default = Color3.fromRGB(100, 60, 180),
     Callback = function(Value)
-        enemyColor = Value
+        ESPState.enemyColor = Value
         refreshCharms()
     end
 })
@@ -1769,7 +1782,7 @@ ESPSection:Label("Team Color"):Colorpicker({
     Flag = "TeamColor",
     Default = Color3.fromRGB(80, 160, 255),
     Callback = function(Value)
-        teamColor = Value
+        ESPState.teamColor = Value
         refreshCharms()
     end
 })
@@ -1779,8 +1792,8 @@ ESPSection:Toggle({
     Flag = "SkeletonESP",
     Default = false,
     Callback = function(Value)
-        showSkeleton = Value
-        for plr, _ in pairs(espDrawings) do
+        ESPState.showSkeleton = Value
+        for plr, _ in pairs(ESPState.drawings) do
             if plr ~= LocalPlayer then
                 removeESP(plr)
                 createESP(plr)
@@ -1796,7 +1809,7 @@ VisualExtraSection:Toggle({
     Flag = "Fullbright",
     Default = false,
     Callback = function(Value)
-        fullbright = Value
+        MiscState.fullbright = Value
         updateLightingState()
     end
 })
@@ -1806,7 +1819,7 @@ VisualExtraSection:Toggle({
     Flag = "NoFog",
     Default = false,
     Callback = function(Value)
-        noFog = Value
+        MiscState.noFog = Value
         updateLightingState()
     end
 })
@@ -1821,14 +1834,14 @@ MoveSection:Toggle({
     Flag = "ShieldEnabled",
     Default = false,
     Callback = function(Value)
-        shieldOn = Value
+        MovementState.shieldOn = Value
         local char = LocalPlayer.Character
         if char then
-            if shieldOn then
-                forceField = Instance.new("ForceField")
-                forceField.Parent = char
+            if MovementState.shieldOn then
+                MovementState.forceField = Instance.new("ForceField")
+                MovementState.forceField.Parent = char
             else
-                if forceField then forceField:Destroy() end
+                if MovementState.forceField then MovementState.forceField:Destroy() end
             end
         end
     end
@@ -1851,7 +1864,7 @@ MoveSection:Slider({
     Default = 16,
     Suffix = " studs",
     Callback = function(Value)
-        currentSpeed = Value
+        MovementState.currentSpeed = Value
     end
 })
 
@@ -1860,7 +1873,7 @@ MoveSection:Toggle({
     Flag = "JumpEnabled",
     Default = false,
     Callback = function(Value)
-        jumpEnabled = Value
+        MovementState.jumpEnabled = Value
     end
 })
 
@@ -1872,7 +1885,7 @@ MoveSection:Slider({
     Default = 50,
     Suffix = "",
     Callback = function(Value)
-        jumpValue = Value
+        MovementState.jumpValue = Value
     end
 })
 
@@ -1881,7 +1894,7 @@ MoveSection:Toggle({
     Flag = "InfiniteJump",
     Default = false,
     Callback = function(Value)
-        infJumpOn = Value
+        MovementState.infJumpOn = Value
     end
 })
 
@@ -1890,22 +1903,22 @@ MoveSection:Toggle({
     Flag = "FlyEnabled",
     Default = false,
     Callback = function(Value)
-        flyOn = Value
-        local char = player.Character
+        MovementState.flyOn = Value
+        local char = LocalPlayer.Character
         local root = char and char:FindFirstChild("HumanoidRootPart")
         if not root then return end
-        if flyOn then
-            bodyVelocity = Instance.new("BodyVelocity")
-            bodyVelocity.MaxForce = Vector3.new(math.huge, math.huge, math.huge)
-            bodyVelocity.Velocity = Vector3.new(0, 0, 0)
-            bodyVelocity.Parent = root
-            bodyGyro = Instance.new("BodyGyro")
-            bodyGyro.MaxTorque = Vector3.new(math.huge, math.huge, math.huge)
-            bodyGyro.CFrame = root.CFrame
-            bodyGyro.Parent = root
+        if MovementState.flyOn then
+            MovementState.bodyVelocity = Instance.new("BodyVelocity")
+            MovementState.bodyVelocity.MaxForce = Vector3.new(math.huge, math.huge, math.huge)
+            MovementState.bodyVelocity.Velocity = Vector3.new(0, 0, 0)
+            MovementState.bodyVelocity.Parent = root
+            MovementState.bodyGyro = Instance.new("BodyGyro")
+            MovementState.bodyGyro.MaxTorque = Vector3.new(math.huge, math.huge, math.huge)
+            MovementState.bodyGyro.CFrame = root.CFrame
+            MovementState.bodyGyro.Parent = root
         else
-            if bodyVelocity then bodyVelocity:Destroy() bodyVelocity = nil end
-            if bodyGyro then bodyGyro:Destroy() bodyGyro = nil end
+            if MovementState.bodyVelocity then MovementState.bodyVelocity:Destroy() MovementState.bodyVelocity = nil end
+            if MovementState.bodyGyro then MovementState.bodyGyro:Destroy() MovementState.bodyGyro = nil end
         end
     end
 })
@@ -1918,7 +1931,7 @@ MoveSection:Slider({
     Default = 50,
     Suffix = "",
     Callback = function(Value)
-        flySpeed = Value
+        MovementState.flySpeed = Value
     end
 })
 
@@ -1927,7 +1940,7 @@ MoveSection:Toggle({
     Flag = "NoclipEnabled",
     Default = false,
     Callback = function(Value)
-        noclipOn = Value
+        MovementState.noclipOn = Value
     end
 })
 
@@ -1936,7 +1949,7 @@ MoveSection:Toggle({
     Flag = "GravityEnabled",
     Default = false,
     Callback = function(Value)
-        gravityEnabled = Value
+        MovementState.gravityEnabled = Value
         if not Value then Workspace.Gravity = defaultGravity end
     end
 })
@@ -1949,8 +1962,8 @@ MoveSection:Slider({
     Default = 196.2,
     Suffix = "",
     Callback = function(Value)
-        gravityValue = Value
-        if gravityEnabled then Workspace.Gravity = gravityValue end
+        MovementState.gravityValue = Value
+        if MovementState.gravityEnabled then Workspace.Gravity = MovementState.gravityValue end
     end
 })
 
@@ -2126,7 +2139,7 @@ TrollSection:Slider({
     Default = 500000,
     Suffix = "",
     Callback = function(Value)
-        flingPower = Value
+        TrollState.flingPower = Value
     end
 })
 
@@ -2138,7 +2151,7 @@ TrollSection:Slider({
     Default = 10,
     Suffix = "",
     Callback = function(Value)
-        orbitRadius = Value
+        TrollState.orbitRadius = Value
     end
 })
 
@@ -2150,7 +2163,7 @@ TrollSection:Slider({
     Default = 6,
     Suffix = "",
     Callback = function(Value)
-        orbitSpeed = Value
+        TrollState.orbitSpeed = Value
     end
 })
 
@@ -2166,7 +2179,7 @@ TrollSection:Toggle({
     Flag = "ConstantFling",
     Default = false,
     Callback = function(Value)
-        constantFling = Value
+        TrollState.constantFling = Value
         if Value then startConstantFling() else clearFlingForce() end
     end
 })
@@ -2183,7 +2196,7 @@ TrollSection:Toggle({
     Flag = "OrbitTarget",
     Default = false,
     Callback = function(Value)
-        orbitTarget = Value
+        TrollState.orbitTarget = Value
         if Value then startOrbit() else clearOrbit() end
     end
 })
@@ -2206,7 +2219,7 @@ TrollSection:Toggle({
     Flag = "SpinTroll",
     Default = false,
     Callback = function(Value)
-        spinTroll = Value
+        TrollState.spinTroll = Value
         if Value then startSpinTroll() else clearSpinTroll() end
     end
 })
@@ -2216,7 +2229,7 @@ TrollSection:Toggle({
     Flag = "Invisible",
     Default = false,
     Callback = function(Value)
-        invisible = Value
+        TrollState.invisible = Value
         updateInvisibleState()
     end
 })
@@ -2231,7 +2244,7 @@ MiscSection:Toggle({
     Flag = "FpsCounter",
     Default = true,
     Callback = function(Value)
-        fpsCounter = Value
+        MiscState.fpsCounter = Value
     end
 })
 
@@ -2240,7 +2253,7 @@ MiscSection:Toggle({
     Flag = "AntiAFK",
     Default = false,
     Callback = function(Value)
-        antiAFK = Value
+        MiscState.antiAFK = Value
     end
 })
 
@@ -2249,7 +2262,7 @@ MiscSection:Toggle({
     Flag = "Fullbright",
     Default = false,
     Callback = function(Value)
-        fullbright = Value
+        MiscState.fullbright = Value
         updateLightingState()
     end
 })
@@ -2259,7 +2272,7 @@ MiscSection:Toggle({
     Flag = "NoFog",
     Default = false,
     Callback = function(Value)
-        noFog = Value
+        MiscState.noFog = Value
         updateLightingState()
     end
 })
@@ -2288,11 +2301,11 @@ MiscSection:Toggle({
     Default = false,
     Callback = function(Value)
         Settings.Misc.StreamProof = Value
-        if LockStatusGui then
-            LockStatusGui.ResetOnSpawn = not Value
+        if GUI.LockStatusGui then
+            GUI.LockStatusGui.ResetOnSpawn = not Value
         end
-        if BindToastGui then
-            BindToastGui.ResetOnSpawn = not Value
+        if GUI.BindToastGui then
+            GUI.BindToastGui.ResetOnSpawn = not Value
         end
     end
 })
@@ -2403,34 +2416,34 @@ UserInputService.InputBegan:Connect(function(input, processed)
     if input.KeyCode == Settings.Misc.MenuKeybind then
         Library:Toggle()
         if Settings.Misc.UnlockMouseOnMenu then
-            menuOpen = not menuOpen
-            if menuOpen then
-                savedMouseState = UserInputService.MouseIconEnabled
+            GUI.menuOpen = not GUI.menuOpen
+            if GUI.menuOpen then
+                GUI.savedMouseState = UserInputService.MouseIconEnabled
                 UserInputService.MouseIconEnabled = true
             else
-                if savedMouseState ~= nil then
-                    UserInputService.MouseIconEnabled = savedMouseState
+                if GUI.savedMouseState ~= nil then
+                    UserInputService.MouseIconEnabled = GUI.savedMouseState
                 end
             end
         end
     end
     if input == Settings.Aim.Keybind then
-        isAming = true
-        if lockMode == "Toggle" then
-            toggleActive = not toggleActive
+        AimState.isAming = true
+        if AimState.lockMode == "Toggle" then
+            AimState.toggleActive = not AimState.toggleActive
         end
     end
     if input.KeyCode == Settings.Binds.PanicKey then
-        aimbotOn = false
-        espEnabled = false
-        noclipOn = false
-        flyOn = false
-        triggerbotOn = false
-        autoShootOn = false
-        constantFling = false
-        orbitTarget = false
-        spinTroll = false
-        headSit = false
+        AimState.aimbotOn = false
+        ESPState.enabled = false
+        MovementState.noclipOn = false
+        MovementState.flyOn = false
+        AimState.triggerbotOn = false
+        AimState.autoShootOn = false
+        TrollState.constantFling = false
+        TrollState.orbitTarget = false
+        TrollState.spinTroll = false
+        TrollState.headSit = false
         clearFlingForce()
         clearOrbit()
         clearSpinTroll()
@@ -2438,32 +2451,32 @@ UserInputService.InputBegan:Connect(function(input, processed)
         showBindToggleToast("Panic", false)
     end
     if input.KeyCode == Settings.Binds.AimToggle then
-        aimbotOn = not aimbotOn
-        showBindToggleToast("Aimbot", aimbotOn)
+        AimState.aimbotOn = not AimState.aimbotOn
+        showBindToggleToast("Aimbot", AimState.aimbotOn)
     end
     if input.KeyCode == Settings.Binds.NoclipToggle then
-        noclipOn = not noclipOn
-        showBindToggleToast("Noclip", noclipOn)
+        MovementState.noclipOn = not MovementState.noclipOn
+        showBindToggleToast("Noclip", MovementState.noclipOn)
     end
     if input.KeyCode == Settings.Binds.FlyToggle then
-        flyOn = not flyOn
-        showBindToggleToast("Fly", flyOn)
+        MovementState.flyOn = not MovementState.flyOn
+        showBindToggleToast("Fly", MovementState.flyOn)
     end
     if input.KeyCode == Settings.Binds.EspToggle then
-        espEnabled = not espEnabled
-        showBindToggleToast("ESP", espEnabled)
+        ESPState.enabled = not ESPState.enabled
+        showBindToggleToast("ESP", ESPState.enabled)
     end
     if input.KeyCode == Settings.Binds.TriggerbotToggle then
-        triggerbotOn = not triggerbotOn
-        showBindToggleToast("Triggerbot", triggerbotOn)
+        AimState.triggerbotOn = not AimState.triggerbotOn
+        showBindToggleToast("Triggerbot", AimState.triggerbotOn)
     end
 end)
 
 UserInputService.InputEnded:Connect(function(input)
     if input == Settings.Aim.Keybind then
-        isAming = false
-        if lockMode == "Hold" then
-            currentTargetPlayer = nil
+        AimState.isAming = false
+        if AimState.lockMode == "Hold" then
+            AimState.currentTargetPlayer = nil
         end
     end
 end)
