@@ -4480,7 +4480,8 @@ local Library do
                     Position = UDim2New(0, 15, 0.5, 0),
                     ZIndex = 2,
                     BorderSizePixel = 0,
-                    BackgroundColor3 = FromRGB(255, 255, 255)
+                    BackgroundColor3 = FromRGB(255, 255, 255),
+                    Visible = false
                 })
                 
                 Instances:Create("UIGradient", {
@@ -4501,7 +4502,7 @@ local Library do
                     AutomaticSize = Enum.AutomaticSize.X,
                     Size = UDim2New(0, 0, 0, 15),
                     BackgroundTransparency = 1,
-                    Position = UDim2New(0, 50, 0, 28),
+                    Position = UDim2New(0, 15, 0, 28),
                     BorderSizePixel = 0,
                     TextTransparency = 0.4,
                     ZIndex = 2,
@@ -4525,8 +4526,7 @@ local Library do
                     AutomaticSize = Enum.AutomaticSize.X,
                     Size = UDim2New(0, 0, 0, 15),
                     BackgroundTransparency = 1,
-                    -- Сохранил твою логику центрирования из прошлого вопроса
-                    Position = (Section.Description == "") and UDim2New(0, 50, 0, 19) or UDim2New(0, 50, 0, 10),
+                    Position = (Section.Description == "") and UDim2New(0, 15, 0, 19) or UDim2New(0, 15, 0, 10),
                     BorderSizePixel = 0,
                     ZIndex = 2,
                     TextSize = 15,
@@ -5008,7 +5008,8 @@ local Library do
                         Position = UDim2New(1, 6, 0.5, 1),
                         ZIndex = 2,
                         BorderSizePixel = 0,
-                        BackgroundColor3 = FromRGB(255, 255, 255)
+                        BackgroundColor3 = FromRGB(255, 255, 255),
+                        Visible = false
                     })  Items["SettingsIcon"] = SettingsItem["SettingsIcon"]
 
                     SettingsItem["Content"] = Instances:Create("ScrollingFrame", {
