@@ -1,27 +1,4 @@
-local Library = nil
-local success, err = pcall(function()
-    local content = readfile("neverlose_ui.lua")
-    if not content or content == "" then
-        error("Failed to read neverlose_ui.lua or file is empty")
-    end
-    
-    local fn = loadstring(content)
-    if not fn then
-        error("loadstring returned nil - exploit may not support loadstring")
-    end
-    
-    Library = fn()
-    if not Library then
-        error("Library returned nil after execution")
-    end
-end)
-
-if not success or not Library then
-    warn("[Monarch] Failed to load Neverlose UI library: " .. tostring(err))
-    warn("[Monarch] Make sure neverlose_ui.lua is in the same directory")
-    warn("[Monarch] Your exploit may not support loadstring/readfile")
-    return
-end
+local Library = loadstring(game:HttpGet("https://raw.githubusercontent.com/ImInsane-1337/neverlose-ui/refs/heads/main/source/library.lua"))()
 
 local UserInputService = game:GetService("UserInputService")
 local TweenService = game:GetService("TweenService")
