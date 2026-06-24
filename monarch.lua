@@ -1831,6 +1831,15 @@ ESPSection:Toggle({
 })
 
 ESPSection:Toggle({
+    Name = "Distance",
+    Flag = "DistanceESP",
+    Default = false,
+    Callback = function(Value)
+        ESPState.showDistance = Value
+    end
+})
+
+ESPSection:Toggle({
     Name = "Team check",
     Flag = "ShowTeammates",
     Default = false,
