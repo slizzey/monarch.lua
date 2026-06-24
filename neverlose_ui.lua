@@ -4436,15 +4436,15 @@ local Library do
                 Items["Section"] = Instances:Create("Frame", {
                     Parent = Section.Page.ColumnsData[Section.Side].Instance,
                     Name = "\0",
-                    BorderColor3 = FromRGB(0, 0, 0),
+                    BorderColor3 = FromRGB(60, 60, 70),
                     BackgroundTransparency = 0.6499999761581421,
                     ClipsDescendants = true,
-                    BorderSizePixel = 0,
+                    BorderSizePixel = 1,
                     Size = UDim2New(1, 0, 0, 45),
                     ZIndex = 2,
                     AutomaticSize = Enum.AutomaticSize.Y,
                     BackgroundColor3 = FromRGB(29, 28, 32)
-                })  Items["Section"]:AddToTheme({BackgroundColor3 = "Section Background 2"})
+                })  Items["Section"]:AddToTheme({BackgroundColor3 = "Section Background 2", BorderColor3 = "Outline"})
                 
                 Items["Top"] = Instances:Create("Frame", {
                     Parent = Items["Section"].Instance,
@@ -4911,7 +4911,7 @@ local Library do
                     TextXAlignment = Enum.TextXAlignment.Left,
                     BorderColor3 = FromRGB(0, 0, 0),
                     ZIndex = 2,
-                    TextSize = 14,
+                    TextSize = Toggle.Section.IsSettings and 12 or 14,
                     BackgroundColor3 = FromRGB(255, 255, 255)
                 })  Items["Text"]:AddToTheme({TextColor3 = "Text"})
 
@@ -5547,7 +5547,7 @@ local Library do
                     BorderSizePixel = 0,
                     BorderColor3 = FromRGB(0, 0, 0),
                     ZIndex = 2,
-                    TextSize = 14,
+                    TextSize = Slider.Section.IsSettings and 12 or 14,
                     BackgroundColor3 = FromRGB(255, 255, 255)
                 })  Items["Text"]:AddToTheme({TextColor3 = "Text"})
 
@@ -6695,7 +6695,7 @@ local Library do
                     Position = UDim2New(0, 30, 0, 5),
                     BorderColor3 = FromRGB(0, 0, 0),
                     ZIndex = 2,
-                    TextSize = 14,
+                    TextSize = Label.Section.IsSettings and 12 or 14,
                     BackgroundColor3 = FromRGB(255, 255, 255)
                 })  Items["Text"]:AddToTheme({TextColor3 = "Text"})          
             end
@@ -6749,11 +6749,11 @@ local Library do
                         Name = "\0",
                         Size = UDim2New(1, 0, 0, 30),
                         Position = UDim2New(0, 0, 0, 30),
-                        BorderColor3 = FromRGB(0, 0, 0),
+                        BorderColor3 = FromRGB(60, 60, 70),
                         ZIndex = 2,
-                        BorderSizePixel = 0,
+                        BorderSizePixel = 1,
                         BackgroundColor3 = FromRGB(27, 26, 29)
-                    })  Items["SubElements"]:AddToTheme({BackgroundColor3 = "Element"})
+                    })  Items["SubElements"]:AddToTheme({BackgroundColor3 = "Element", BorderColor3 = "Outline"})
                     
                     Instances:Create("UICorner", {
                         Parent = Items["SubElements"].Instance,
