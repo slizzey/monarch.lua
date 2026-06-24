@@ -1495,8 +1495,6 @@ if autoLoadName and Settings.Misc.AutoLoadConfig then
     loadConfig(autoLoadName)
 end
 
-Window:Category("Aim")
-
 local AimPage = Window:Page({Name = "Aim", Icon = "138827881557940"})
 local AimMainSection = AimPage:Section({Name = "Main", Side = 1})
 
@@ -1766,8 +1764,6 @@ AimExtraSection:Label("Crosshair Color"):Colorpicker({
     end
 })
 
-Window:Category("Visual")
-
 local VisualPage = Window:Page({Name = "Visual", Icon = "122669828593160"})
 local ESPSection = VisualPage:Section({Name = "Main", Side = 1})
 
@@ -1890,7 +1886,25 @@ ESPSection:Label("Team Color"):Colorpicker({
 
 local VisualExtraSection = VisualPage:Section({Name = "Visuals", Side = 2})
 
-Window:Category("Movement")
+VisualExtraSection:Toggle({
+    Name = "Fullbright",
+    Flag = "Fullbright",
+    Default = false,
+    Callback = function(Value)
+        MiscState.fullbright = Value
+        updateLightingState()
+    end
+})
+
+VisualExtraSection:Toggle({
+    Name = "No Fog",
+    Flag = "NoFog",
+    Default = false,
+    Callback = function(Value)
+        MiscState.noFog = Value
+        updateLightingState()
+    end
+})
 
 local MovementPage = Window:Page({Name = "Movement", Icon = "138827881557940"})
 local MoveSection = MovementPage:Section({Name = "Main", Side = 1})
@@ -2032,8 +2046,6 @@ MoveSection:Slider({
         if MovementState.gravityEnabled then Workspace.Gravity = MovementState.gravityValue end
     end
 })
-
-Window:Category("Players")
 
 local PlayersPage = Window:Page({Name = "Players", Icon = "138827881557940"})
 local PlayersSection = PlayersPage:Section({Name = "Main", Side = 1})
@@ -2192,8 +2204,6 @@ Players.PlayerRemoving:Connect(function()
     updatePlayerList()
 end)
 
-Window:Category("Troll")
-
 local TrollPage = Window:Page({Name = "Troll", Icon = "138827881557940"})
 local TrollSection = TrollPage:Section({Name = "Main", Side = 1})
 
@@ -2300,8 +2310,6 @@ TrollSection:Toggle({
     end
 })
 
-Window:Category("Misc")
-
 local MiscPage = Window:Page({Name = "Misc", Icon = "138827881557940"})
 local MiscSection = MiscPage:Section({Name = "Misc", Side = 1})
 
@@ -2320,26 +2328,6 @@ MiscSection:Toggle({
     Default = false,
     Callback = function(Value)
         MiscState.antiAFK = Value
-    end
-})
-
-MiscSection:Toggle({
-    Name = "Fullbright",
-    Flag = "Fullbright",
-    Default = false,
-    Callback = function(Value)
-        MiscState.fullbright = Value
-        updateLightingState()
-    end
-})
-
-MiscSection:Toggle({
-    Name = "No Fog",
-    Flag = "NoFog",
-    Default = false,
-    Callback = function(Value)
-        MiscState.noFog = Value
-        updateLightingState()
     end
 })
 
