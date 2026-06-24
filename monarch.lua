@@ -1027,11 +1027,16 @@ end
 
 RunService.Heartbeat:Connect(function()
     local hum = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid")
-    if hum then 
+    if hum then
         if MovementState.speedEnabled then
             hum.WalkSpeed = MovementState.currentSpeed
         else
             hum.WalkSpeed = 16
+        end
+        if MovementState.jumpEnabled then
+            hum.JumpPower = MovementState.jumpValue
+        else
+            hum.JumpPower = 50
         end
     end
 end)
@@ -1043,11 +1048,6 @@ UserInputService.JumpRequest:Connect(function()
     local hum = char:FindFirstChild("Humanoid")
     local root = char:FindFirstChild("HumanoidRootPart")
     if hum and root and hum.Health > 0 then
-        if MovementState.jumpEnabled then
-            hum.JumpPower = MovementState.jumpValue
-        else
-            hum.JumpPower = 50
-        end
         root.Velocity = Vector3.new(root.Velocity.X, MovementState.jumpValue, root.Velocity.Z)
     end
 end)
@@ -1109,6 +1109,11 @@ LocalPlayer.CharacterAdded:Connect(function(newChar)
         hum.WalkSpeed = MovementState.currentSpeed
     else
         hum.WalkSpeed = 16
+    end
+    if MovementState.jumpEnabled then
+        hum.JumpPower = MovementState.jumpValue
+    else
+        hum.JumpPower = 50
     end
     if MovementState.shieldOn then
         MovementState.forceField = Instance.new("ForceField")
