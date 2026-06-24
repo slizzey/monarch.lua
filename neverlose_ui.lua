@@ -5022,24 +5022,6 @@ local Library do
                         ApplyStrokeMode = Enum.ApplyStrokeMode.Border
                     }):AddToTheme({Color = "Outline"})
 
-                    SettingsItem["ModalOverlay"] = Instances:Create("TextButton", {
-                        Parent = Library.Holder.Instance,
-                        Name = "\0",
-                        Text = "",
-                        AutoButtonColor = false,
-                        Size = UDim2New(1, 0, 1, 0),
-                        Position = UDim2New(0, 0, 0, 0),
-                        BackgroundTransparency = 1,
-                        BorderSizePixel = 0,
-                        ZIndex = 6,
-                        Visible = false,
-                        BackgroundColor3 = FromRGB(0, 0, 0)
-                    })
-
-                    SettingsItem["ModalOverlay"]:Connect("MouseButton1Down", function()
-                        Settings:SetOpen(false)
-                    end)
-
                     SettingsItem["SettingsIcon"] = Instances:Create("ImageLabel", {
                         Parent = Items["Text"].Instance,
                         Name = "\0",
@@ -5166,7 +5148,6 @@ local Library do
                     end)
                 end
 
-                local RenderStepped 
                 local Debounce = false
 
                 function Settings:SetOpen(Bool)
@@ -5188,17 +5169,10 @@ local Library do
 
                         SettingsItem["Settings"].Instance.Visible = true
                         SettingsItem["Settings"].Instance.Parent = Library.Holder.Instance
-                        SettingsItem["ModalOverlay"].Instance.Visible = true
-                        
-                        RenderStepped = RunService.RenderStepped:Connect(function()
-                            local iconAbsolutePos = Items["SettingsIcon"].Instance.AbsolutePosition
-                            local iconAbsoluteSize = Items["SettingsIcon"].Instance.AbsoluteSize
 
-                            local popupX = iconAbsolutePos.X + iconAbsoluteSize.X / 2 - 122.5
-                            local popupY = iconAbsolutePos.Y + iconAbsoluteSize.Y + 8
-
-                            SettingsItem["Settings"].Instance.Position = UDim2New(0, popupX, 0, popupY)
-                        end)
+                        local iconPos = Items["SettingsIcon"].Instance.AbsolutePosition
+                        local iconSize = Items["SettingsIcon"].Instance.AbsoluteSize
+                        SettingsItem["Settings"].Instance.Position = UDim2New(0, iconPos.X + iconSize.X / 2 - 122.5, 0, iconPos.Y + iconSize.Y + 8)
     
                         for Index, Value in Library.OpenFrames do 
                             if Value ~= Settings then 
@@ -5212,15 +5186,8 @@ local Library do
                             Value:RefreshPosition(false)
                         end
 
-                        SettingsItem["ModalOverlay"].Instance.Visible = false
-
                         if Library.OpenFrames[Settings] then
                             Library.OpenFrames[Settings] = nil
-                        end
-
-                        if RenderStepped then
-                            RenderStepped:Disconnect()
-                            RenderStepped = nil
                         end
                     end
     
