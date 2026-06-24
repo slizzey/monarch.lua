@@ -5172,7 +5172,7 @@ local Library do
 
                         local iconPos = Items["SettingsIcon"].Instance.AbsolutePosition
                         local iconSize = Items["SettingsIcon"].Instance.AbsoluteSize
-                        SettingsItem["Settings"].Instance.Position = UDim2New(0, iconPos.X + iconSize.X / 2 - 122.5, 0, iconPos.Y + iconSize.Y + 8)
+                        SettingsItem["Settings"].Instance.Position = UDim2New(0, iconPos.X - 50, 0, iconPos.Y + iconSize.Y + 12)
     
                         for Index, Value in Library.OpenFrames do 
                             if Value ~= Settings then 
