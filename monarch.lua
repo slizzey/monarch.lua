@@ -273,6 +273,13 @@ local MiscState = {
     atmosphericFogColor = Color3.fromRGB(185, 195, 210),
     rain = false,
     floatingLamps = false,
+    rtxEnabled = false,
+    currentSkyPreset = "Default",
+    bloomEnabled = false,
+    colorCorrectionEnabled = false,
+    sunRaysEnabled = false,
+    dofEnabled = false,
+    forceLighting = false,
 }
 
 local TrollState = {
@@ -837,6 +844,212 @@ local function disableFloatingLamps()
     if lampsUpdateConn then lampsUpdateConn:Disconnect() end
     if lampsFolder then lampsFolder:Destroy() end
     lamps = {}
+end
+
+-- RTX / Post-Processing Effects
+local rtxEffects = {
+    bloom = nil,
+    colorCorrection = nil,
+    sunRays = nil,
+    dof = nil,
+    sky = nil
+}
+local lightingForceConn = nil
+
+local skyPresets = {
+    {
+        Name = "Default",
+        Time = 12,
+        Exposure = 0,
+        Ambient = nil,
+        OutdoorAmbient = nil,
+        Skybox = nil
+    },
+    {
+        Name = "Golden Sunset",
+        Time = 17.7,
+        Exposure = 0.55,
+        Ambient = Color3.fromRGB(30, 20, 15),
+        OutdoorAmbient = Color3.fromRGB(40, 25, 20),
+        Skybox = {
+            Bk = "rbxassetid://171560994",
+            Dn = "rbxassetid://171561019",
+            Ft = "rbxassetid://171560968",
+            Lf = "rbxassetid://171561065",
+            Rt = "rbxassetid://171561026",
+            Up = "rbxassetid://171561009"
+        }
+    },
+    {
+        Name = "Bright Daylight",
+        Time = 13.0,
+        Exposure = 0.35,
+        Ambient = Color3.fromRGB(140, 140, 140),
+        OutdoorAmbient = Color3.fromRGB(220, 220, 220),
+        Skybox = nil
+    },
+    {
+        Name = "Purple Nebula",
+        Time = 0,
+        Exposure = 0.7,
+        Ambient = Color3.fromRGB(20, 10, 25),
+        OutdoorAmbient = Color3.fromRGB(25, 15, 35),
+        Skybox = {
+            Bk = "rbxassetid://171410628",
+            Dn = "rbxassetid://171410649",
+            Ft = "rbxassetid://171410620",
+            Lf = "rbxassetid://171410666",
+            Rt = "rbxassetid://171410657",
+            Up = "rbxassetid://171410636"
+        }
+    },
+    {
+        Name = "Cyberpunk Red",
+        Time = 18.0,
+        Exposure = 0.6,
+        Ambient = Color3.fromRGB(35, 10, 15),
+        OutdoorAmbient = Color3.fromRGB(45, 15, 20),
+        Skybox = {
+            Bk = "rbxassetid://12064107",
+            Dn = "rbxassetid://12064107",
+            Ft = "rbxassetid://12064107",
+            Lf = "rbxassetid://12064107",
+            Rt = "rbxassetid://12064107",
+            Up = "rbxassetid://12064107"
+        }
+    }
+}
+
+local function applySkyPreset(presetName)
+    local preset
+    for _, p in ipairs(skyPresets) do
+        if p.Name == presetName then
+            preset = p
+            break
+        end
+    end
+    if not preset then return end
+
+    local sky = Lighting:FindFirstChildOfClass("Sky")
+
+    if preset.Skybox then
+        if not sky then
+            sky = Instance.new("Sky")
+            sky.Parent = Lighting
+        end
+        sky.SkyboxBk = preset.Skybox.Bk
+        sky.SkyboxDn = preset.Skybox.Dn
+        sky.SkyboxFt = preset.Skybox.Ft
+        sky.SkyboxLf = preset.Skybox.Lf
+        sky.SkyboxRt = preset.Skybox.Rt
+        sky.SkyboxUp = preset.Skybox.Up
+        rtxEffects.sky = sky
+    else
+        if sky then sky:Destroy() end
+        rtxEffects.sky = nil
+    end
+
+    Lighting.ClockTime = preset.Time
+    Lighting.ExposureCompensation = preset.Exposure
+    if preset.Ambient then Lighting.Ambient = preset.Ambient end
+    if preset.OutdoorAmbient then Lighting.OutdoorAmbient = preset.OutdoorAmbient end
+    Lighting.GlobalShadows = true
+end
+
+local function enableBloom()
+    if rtxEffects.bloom then return end
+    rtxEffects.bloom = Instance.new("BloomEffect")
+    rtxEffects.bloom.Name = "Monarch_Bloom"
+    rtxEffects.bloom.Intensity = 0.8
+    rtxEffects.bloom.Size = 20
+    rtxEffects.bloom.Threshold = 0.8
+    rtxEffects.bloom.Parent = Lighting
+end
+
+local function disableBloom()
+    if rtxEffects.bloom then
+        rtxEffects.bloom:Destroy()
+        rtxEffects.bloom = nil
+    end
+end
+
+local function enableColorCorrection()
+    if rtxEffects.colorCorrection then return end
+    rtxEffects.colorCorrection = Instance.new("ColorCorrectionEffect")
+    rtxEffects.colorCorrection.Name = "Monarch_ColorCorrection"
+    rtxEffects.colorCorrection.Contrast = 0.15
+    rtxEffects.colorCorrection.Saturation = 0.2
+    rtxEffects.colorCorrection.TintColor = Color3.fromRGB(255, 255, 255)
+    rtxEffects.colorCorrection.Parent = Lighting
+end
+
+local function disableColorCorrection()
+    if rtxEffects.colorCorrection then
+        rtxEffects.colorCorrection:Destroy()
+        rtxEffects.colorCorrection = nil
+    end
+end
+
+local function enableSunRays()
+    if rtxEffects.sunRays then return end
+    rtxEffects.sunRays = Instance.new("SunRaysEffect")
+    rtxEffects.sunRays.Name = "Monarch_SunRays"
+    rtxEffects.sunRays.Intensity = 0.2
+    rtxEffects.sunRays.Spread = 0.75
+    rtxEffects.sunRays.Parent = Lighting
+end
+
+local function disableSunRays()
+    if rtxEffects.sunRays then
+        rtxEffects.sunRays:Destroy()
+        rtxEffects.sunRays = nil
+    end
+end
+
+local function enableDOF()
+    if rtxEffects.dof then return end
+    rtxEffects.dof = Instance.new("DepthOfFieldEffect")
+    rtxEffects.dof.Name = "Monarch_DOF"
+    rtxEffects.dof.FarIntensity = 0.15
+    rtxEffects.dof.FocusDistance = 35
+    rtxEffects.dof.InFocusRadius = 25
+    rtxEffects.dof.NearIntensity = 0
+    rtxEffects.dof.Parent = Lighting
+end
+
+local function disableDOF()
+    if rtxEffects.dof then
+        rtxEffects.dof:Destroy()
+        rtxEffects.dof = nil
+    end
+end
+
+local function enableLightingForce()
+    if lightingForceConn then return end
+    lightingForceConn = RunService.RenderStepped:Connect(function()
+        if not MiscState.forceLighting then return end
+        local preset
+        for _, p in ipairs(skyPresets) do
+            if p.Name == MiscState.currentSkyPreset then
+                preset = p
+                break
+            end
+        end
+        if preset then
+            Lighting.ClockTime = preset.Time
+            Lighting.ExposureCompensation = preset.Exposure
+            if preset.Ambient then Lighting.Ambient = preset.Ambient end
+            if preset.OutdoorAmbient then Lighting.OutdoorAmbient = preset.OutdoorAmbient end
+            Lighting.GlobalShadows = true
+        end
+    end)
+end
+
+local function disableLightingForce()
+    if lightingForceConn then
+        lightingForceConn:Disconnect()
+        lightingForceConn = nil
+    end
 end
 
 local FOVring = Drawing.new("Circle")
@@ -2348,6 +2561,75 @@ VisualExtraSection:Label("Fog Color"):Colorpicker({
             atmosphericFogInstance.Decay = Value
             Lighting.FogColor = Value
         end
+    end
+})
+
+local skyPresetNames = {}
+for _, preset in ipairs(skyPresets) do
+    table.insert(skyPresetNames, preset.Name)
+end
+
+VisualExtraSection:Dropdown({
+    Name = "Skybox Preset",
+    Flag = "SkyboxPreset",
+    Default = {"Default"},
+    Items = skyPresetNames,
+    Multi = false,
+    Callback = function(Value)
+        if Value and #Value > 0 then
+            MiscState.currentSkyPreset = Value[1]
+            applySkyPreset(MiscState.currentSkyPreset)
+        end
+    end
+})
+
+VisualExtraSection:Toggle({
+    Name = "Bloom",
+    Flag = "BloomEnabled",
+    Default = false,
+    Callback = function(Value)
+        MiscState.bloomEnabled = Value
+        if Value then enableBloom() else disableBloom() end
+    end
+})
+
+VisualExtraSection:Toggle({
+    Name = "Color Correction",
+    Flag = "ColorCorrectionEnabled",
+    Default = false,
+    Callback = function(Value)
+        MiscState.colorCorrectionEnabled = Value
+        if Value then enableColorCorrection() else disableColorCorrection() end
+    end
+})
+
+VisualExtraSection:Toggle({
+    Name = "Sun Rays",
+    Flag = "SunRaysEnabled",
+    Default = false,
+    Callback = function(Value)
+        MiscState.sunRaysEnabled = Value
+        if Value then enableSunRays() else disableSunRays() end
+    end
+})
+
+VisualExtraSection:Toggle({
+    Name = "Depth of Field",
+    Flag = "DOFEnabled",
+    Default = false,
+    Callback = function(Value)
+        MiscState.dofEnabled = Value
+        if Value then enableDOF() else disableDOF() end
+    end
+})
+
+VisualExtraSection:Toggle({
+    Name = "Force Lighting",
+    Flag = "ForceLighting",
+    Default = false,
+    Callback = function(Value)
+        MiscState.forceLighting = Value
+        if Value then enableLightingForce() else disableLightingForce() end
     end
 })
 
