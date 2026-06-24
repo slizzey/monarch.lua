@@ -2998,24 +2998,21 @@ end
 
 updatePlayerList()
 
-PlayersSection:Dropdown({
-    Name = "Select Target",
-    Flag = "TargetPlayer",
-    Default = {},
-    Items = playerList,
-    Multi = false,
-    Callback = function(Value)
-        if Value and #Value > 0 then
-            selectedPlayerName = Value[1]
+for _, playerName in ipairs(playerList) do
+    PlayersSection:Button({
+        Name = playerName,
+        Callback = function()
+            selectedPlayerName = playerName
             for _, plr in ipairs(Players:GetPlayers()) do
-                if plr.Name == selectedPlayerName then
+                if plr.Name == playerName then
                     trollTarget = plr
                     break
                 end
             end
+            notify("Monarch", "Selected: " .. playerName, 2)
         end
-    end
-})
+    })
+end
 
 PlayersSection:Button({
     Name = "Refresh Player List",
@@ -3137,112 +3134,6 @@ end)
 Players.PlayerRemoving:Connect(function()
     updatePlayerList()
 end)
-
-local TrollPage = Window:Page({Name = "Troll"})
-local TrollSection = TrollPage:Section({Name = "Main", Side = 1})
-
-TrollSection:Slider({
-    Name = "Fling Power",
-    Flag = "FlingPower",
-    Min = 100000,
-    Max = 1000000,
-    Default = 500000,
-    Suffix = "",
-    Callback = function(Value)
-        TrollState.flingPower = Value
-    end
-})
-
-TrollSection:Slider({
-    Name = "Orbit Radius",
-    Flag = "OrbitRadius",
-    Min = 3,
-    Max = 30,
-    Default = 10,
-    Suffix = "",
-    Callback = function(Value)
-        TrollState.orbitRadius = Value
-    end
-})
-
-TrollSection:Slider({
-    Name = "Orbit Speed",
-    Flag = "OrbitSpeed",
-    Min = 1,
-    Max = 20,
-    Default = 6,
-    Suffix = "",
-    Callback = function(Value)
-        TrollState.orbitSpeed = Value
-    end
-})
-
-TrollSection:Button({
-    Name = "One-Time Fling",
-    Callback = function()
-        flingTargetOnce(getTrollTarget())
-    end
-})
-
-TrollSection:Toggle({
-    Name = "Constant Fling",
-    Flag = "ConstantFling",
-    Default = false,
-    Callback = function(Value)
-        TrollState.constantFling = Value
-        if Value then startConstantFling() else clearFlingForce() end
-    end
-})
-
-TrollSection:Button({
-    Name = "Next Target",
-    Callback = function()
-        cycleTrollTarget()
-    end
-})
-
-TrollSection:Toggle({
-    Name = "Orbit Target",
-    Flag = "OrbitTarget",
-    Default = false,
-    Callback = function(Value)
-        TrollState.orbitTarget = Value
-        if Value then startOrbit() else clearOrbit() end
-    end
-})
-
-TrollSection:Toggle({
-    Name = "Head Sit",
-    Flag = "HeadSit",
-    Default = false,
-    Callback = function(Value)
-        if Value then
-            startHeadSit()
-        else
-            clearHeadSit()
-        end
-    end
-})
-
-TrollSection:Toggle({
-    Name = "Spin Troll",
-    Flag = "SpinTroll",
-    Default = false,
-    Callback = function(Value)
-        TrollState.spinTroll = Value
-        if Value then startSpinTroll() else clearSpinTroll() end
-    end
-})
-
-TrollSection:Toggle({
-    Name = "Invisible Character",
-    Flag = "Invisible",
-    Default = false,
-    Callback = function(Value)
-        TrollState.invisible = Value
-        updateInvisibleState()
-    end
-})
 
 local MiscPage = Window:Page({Name = "Misc"})
 local MiscSection = MiscPage:Section({Name = "Misc", Side = 1})
