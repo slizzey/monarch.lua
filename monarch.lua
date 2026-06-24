@@ -1569,7 +1569,7 @@ local ChamsToggle = ESPSection:Toggle({
     end
 })
 
-local ChamsSettings = ChamsToggle:Settings(140)
+local ChamsSettings = ChamsToggle:Settings(180)
 ChamsSettings:Label("Chams Fill Color"):Colorpicker({
     Name = "Chams Fill Color",
     Flag = "ChamsFillColor",
@@ -1757,7 +1757,7 @@ local BloomToggle = VisualExtraSection:Toggle({
     end
 })
 
-local BloomSettings = BloomToggle:Settings(120)
+local BloomSettings = BloomToggle:Settings(140)
 BloomSettings:Slider({
     Name = "Intensity",
     Flag = "BloomIntensity",
@@ -1812,7 +1812,7 @@ local ColorCorrectionToggle = VisualExtraSection:Toggle({
     end
 })
 
-local ColorCorrectionSettings = ColorCorrectionToggle:Settings(120)
+local ColorCorrectionSettings = ColorCorrectionToggle:Settings(140)
 ColorCorrectionSettings:Slider({
     Name = "Contrast",
     Flag = "ColorContrast",
@@ -1863,7 +1863,7 @@ local SunRaysToggle = VisualExtraSection:Toggle({
     end
 })
 
-local SunRaysSettings = SunRaysToggle:Settings(80)
+local SunRaysSettings = SunRaysToggle:Settings(100)
 SunRaysSettings:Slider({
     Name = "Intensity",
     Flag = "SunRaysIntensity",
@@ -1904,7 +1904,7 @@ local DOFToggle = VisualExtraSection:Toggle({
     end
 })
 
-local DOFSettings = DOFToggle:Settings(150)
+local DOFSettings = DOFToggle:Settings(180)
 DOFSettings:Slider({
     Name = "Far Intensity",
     Flag = "DOFFarIntensity",
@@ -2135,21 +2135,24 @@ end
 
 updatePlayerList()
 
-for _, playerName in ipairs(playerList) do
-    PlayersSection:Button({
-        Name = playerName,
-        Callback = function()
-            selectedPlayerName = playerName
+PlayersSection:Dropdown({
+    Name = "Select Target",
+    Flag = "TargetPlayer",
+    Default = {},
+    Items = playerList,
+    Multi = false,
+    Callback = function(Value)
+        if Value and #Value > 0 then
+            selectedPlayerName = Value[1]
             for _, plr in ipairs(Players:GetPlayers()) do
-                if plr.Name == playerName then
+                if plr.Name == selectedPlayerName then
                     trollTarget = plr
                     break
                 end
             end
-            notify("Monarch", "Selected: " .. playerName, 2)
         end
-    })
-end
+    end
+})
 
 PlayersSection:Button({
     Name = "Refresh Player List",
