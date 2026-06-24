@@ -1599,6 +1599,10 @@ ESPSection:Toggle({
     Callback = function(Value)
         ESPState.chamsEnabled = Value
         refreshChams()
+        if chamsFillColorPicker then chamsFillColorPicker:SetVisible(Value) end
+        if chamsOutlineColorPicker then chamsOutlineColorPicker:SetVisible(Value) end
+        if chamsFillTransparencySlider then chamsFillTransparencySlider:SetVisible(Value) end
+        if chamsOutlineTransparencySlider then chamsOutlineTransparencySlider:SetVisible(Value) end
     end
 })
 
@@ -1657,7 +1661,7 @@ ESPSection:Label("ESP Color"):Colorpicker({
     end
 })
 
-ESPSection:Label("Chams Fill Color"):Colorpicker({
+local chamsFillColorPicker = ESPSection:Label("Chams Fill Color"):Colorpicker({
     Name = "Chams Fill Color",
     Flag = "ChamsFillColor",
     Default = Color3.fromRGB(100, 60, 180),
@@ -1666,8 +1670,9 @@ ESPSection:Label("Chams Fill Color"):Colorpicker({
         refreshChams()
     end
 })
+chamsFillColorPicker:SetVisible(false)
 
-ESPSection:Label("Chams Outline Color"):Colorpicker({
+local chamsOutlineColorPicker = ESPSection:Label("Chams Outline Color"):Colorpicker({
     Name = "Chams Outline Color",
     Flag = "ChamsOutlineColor",
     Default = Color3.fromRGB(100, 60, 180),
@@ -1676,32 +1681,37 @@ ESPSection:Label("Chams Outline Color"):Colorpicker({
         refreshChams()
     end
 })
+chamsOutlineColorPicker:SetVisible(false)
 
-ESPSection:Slider({
+local chamsFillTransparencySlider = ESPSection:Slider({
     Name = "Chams Fill Transparency",
     Flag = "ChamsFillTransparency",
     Min = 0,
     Max = 1,
     Default = 0.5,
     Suffix = "",
+    Step = 0.1,
     Callback = function(Value)
         ESPState.chamsFillTransparency = Value
         refreshChams()
     end
 })
+chamsFillTransparencySlider:SetVisible(false)
 
-ESPSection:Slider({
+local chamsOutlineTransparencySlider = ESPSection:Slider({
     Name = "Chams Outline Transparency",
     Flag = "ChamsOutlineTransparency",
     Min = 0,
     Max = 1,
     Default = 0,
     Suffix = "",
+    Step = 0.1,
     Callback = function(Value)
         ESPState.chamsOutlineTransparency = Value
         refreshChams()
     end
 })
+chamsOutlineTransparencySlider:SetVisible(false)
 
 local VisualExtraSection = VisualPage:Section({Name = "Visuals", Side = 2})
 
