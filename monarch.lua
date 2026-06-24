@@ -1569,7 +1569,7 @@ local ChamsToggle = ESPSection:Toggle({
     end
 })
 
-local ChamsSettings = ChamsToggle:Settings(180)
+local ChamsSettings = ChamsToggle:Settings(220)
 ChamsSettings:Label("Chams Fill Color"):Colorpicker({
     Name = "Chams Fill Color",
     Flag = "ChamsFillColor",
@@ -1812,7 +1812,7 @@ local ColorCorrectionToggle = VisualExtraSection:Toggle({
     end
 })
 
-local ColorCorrectionSettings = ColorCorrectionToggle:Settings(140)
+local ColorCorrectionSettings = ColorCorrectionToggle:Settings(180)
 ColorCorrectionSettings:Slider({
     Name = "Contrast",
     Flag = "ColorContrast",
@@ -2003,7 +2003,7 @@ local WalkSpeedToggle = MoveSection:Toggle({
     end
 })
 
-local WalkSpeedSettings = WalkSpeedToggle:Settings(60)
+local WalkSpeedSettings = WalkSpeedToggle:Settings(80)
 WalkSpeedSettings:Slider({
     Name = "Speed",
     Flag = "SpeedValue",
@@ -2025,7 +2025,7 @@ local JumpHeightToggle = MoveSection:Toggle({
     end
 })
 
-local JumpHeightSettings = JumpHeightToggle:Settings(60)
+local JumpHeightSettings = JumpHeightToggle:Settings(80)
 JumpHeightSettings:Slider({
     Name = "Height",
     Flag = "JumpValue",
@@ -2072,7 +2072,7 @@ local FlyToggle = MoveSection:Toggle({
     end
 })
 
-local FlySettings = FlyToggle:Settings(60)
+local FlySettings = FlyToggle:Settings(80)
 FlySettings:Slider({
     Name = "Fly Speed",
     Flag = "FlySpeed",
@@ -2104,7 +2104,7 @@ local GravityToggle = MoveSection:Toggle({
     end
 })
 
-local GravitySettings = GravityToggle:Settings(60)
+local GravitySettings = GravityToggle:Settings(80)
 GravitySettings:Slider({
     Name = "Gravity Value",
     Flag = "GravityValue",
