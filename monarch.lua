@@ -238,16 +238,13 @@ local MovementState = {
     infJumpOn = false,
     noclipOn = false,
     flyOn = false,
+    bodyVelocity = nil,
+    bodyGyro = nil,
     flySpeed = 50,
     jumpEnabled = false,
     jumpValue = 50,
     gravityEnabled = false,
     gravityValue = 196.2,
-    -- Spring physics for smooth flight (Orca defaults)
-    flyVelocity = Vector3.new(0, 0, 0),
-    springVelocity = Vector3.new(0, 0, 0),
-    springFrequency = 4,
-    springDamping = 1,
 }
 
 local ESPState = {
@@ -1067,12 +1064,12 @@ RunService.Stepped:Connect(function()
     end
 end)
 
--- Heartbeat for physics updates (Orca-style)
-RunService.Heartbeat:Connect(function(dt)
+-- Simple flight using BodyVelocity (working version)
+RunService.RenderStepped:Connect(function(dt)
     if not MovementState.flyOn then return end
     local char = LocalPlayer.Character
     local root = char and char:FindFirstChild("HumanoidRootPart")
-    if not root then return end
+    if not root or not MovementState.bodyVelocity then return end
 
     -- Calculate target velocity based on input
     local targetVel = Vector3.new(0, 0, 0)
@@ -1090,49 +1087,13 @@ RunService.Heartbeat:Connect(function(dt)
     end
     targetVel = Vector3.new(horizontalMove.X, targetVel.Y * MovementState.flySpeed, horizontalMove.Z)
 
-    -- Apply spring physics to each axis
-    local velX, springVelX = springStep(
-        MovementState.flyVelocity.X,
-        targetVel.X,
-        MovementState.springVelocity.X,
-        dt,
-        MovementState.springFrequency,
-        MovementState.springDamping
-    )
-    local velY, springVelY = springStep(
-        MovementState.flyVelocity.Y,
-        targetVel.Y,
-        MovementState.springVelocity.Y,
-        dt,
-        MovementState.springFrequency,
-        MovementState.springDamping
-    )
-    local velZ, springVelZ = springStep(
-        MovementState.flyVelocity.Z,
-        targetVel.Z,
-        MovementState.springVelocity.Z,
-        dt,
-        MovementState.springFrequency,
-        MovementState.springDamping
-    )
+    -- Apply to BodyVelocity
+    MovementState.bodyVelocity.Velocity = targetVel
 
-    -- Update state
-    MovementState.flyVelocity = Vector3.new(velX, velY, velZ)
-    MovementState.springVelocity = Vector3.new(springVelX, springVelY, springVelZ)
-
-    -- Apply directly to AssemblyLinearVelocity (Orca-style)
-    root.AssemblyLinearVelocity = MovementState.flyVelocity
-end)
-
--- RenderStepped for CFrame updates (Orca-style)
-RunService.RenderStepped:Connect(function()
-    if not MovementState.flyOn then return end
-    local char = LocalPlayer.Character
-    local root = char and char:FindFirstChild("HumanoidRootPart")
-    if not root then return end
-
-    -- Update CFrame to face camera direction
-    root.CFrame = CFrame.new(root.Position) * Camera.CFrame.Rotation
+    -- Update BodyGyro to face camera direction
+    if MovementState.bodyGyro then
+        MovementState.bodyGyro.CFrame = CFrame.new(root.Position) * Camera.CFrame.Rotation
+    end
 end)
 
 RunService.RenderStepped:Connect(function()
@@ -1376,14 +1337,6 @@ local function respawnCharacter()
     end
 end
 
--- Spring physics function for smooth flight (Orca-style)
-local function springStep(current, target, velocity, dt, frequency, damping)
-    local displacement = target - current
-    local acceleration = displacement * (frequency * frequency) - velocity * (2 * frequency * damping)
-    local newVelocity = velocity + acceleration * dt
-    local newValue = current + newVelocity * dt
-    return newValue, newVelocity
-end
 
 local function rejoinGame()
     TeleportService:Teleport(game.PlaceId)
@@ -1908,14 +1861,17 @@ MoveSection:Toggle({
         local root = char and char:FindFirstChild("HumanoidRootPart")
         if not root then return end
         if MovementState.flyOn then
-            -- Reset spring velocities
-            MovementState.flyVelocity = Vector3.new(0, 0, 0)
-            MovementState.springVelocity = Vector3.new(0, 0, 0)
-            -- Reset AssemblyLinearVelocity
-            root.AssemblyLinearVelocity = Vector3.new(0, 0, 0)
+            MovementState.bodyVelocity = Instance.new("BodyVelocity")
+            MovementState.bodyVelocity.MaxForce = Vector3.new(math.huge, math.huge, math.huge)
+            MovementState.bodyVelocity.Velocity = Vector3.new(0, 0, 0)
+            MovementState.bodyVelocity.Parent = root
+            MovementState.bodyGyro = Instance.new("BodyGyro")
+            MovementState.bodyGyro.MaxTorque = Vector3.new(math.huge, math.huge, math.huge)
+            MovementState.bodyGyro.CFrame = root.CFrame
+            MovementState.bodyGyro.Parent = root
         else
-            -- Reset velocity when disabling
-            root.AssemblyLinearVelocity = Vector3.new(0, 0, 0)
+            if MovementState.bodyVelocity then MovementState.bodyVelocity:Destroy() MovementState.bodyVelocity = nil end
+            if MovementState.bodyGyro then MovementState.bodyGyro:Destroy() MovementState.bodyGyro = nil end
         end
     end
 })
