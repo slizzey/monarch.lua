@@ -4851,11 +4851,11 @@ local Library do
                     Parent = Items["Toggle"].Instance,
                     Name = "\0",
                     Size = UDim2New(0, 18, 0, 18),
-                    BorderColor3 = FromRGB(0, 0, 0),
+                    BorderColor3 = FromRGB(60, 60, 70),
                     ZIndex = 2,
-                    BorderSizePixel = 0,
+                    BorderSizePixel = 1,
                     BackgroundColor3 = FromRGB(124, 163, 255)
-                })  Items["Indicator"]:AddToTheme({BackgroundColor3 = "Element"})
+                })  Items["Indicator"]:AddToTheme({BackgroundColor3 = "Element", BorderColor3 = "Outline"})
                 
                 Instances:Create("UICorner", {
                     Parent = Items["Indicator"].Instance,
@@ -4981,15 +4981,15 @@ local Library do
                         Parent = Library.UnusedHolder.Instance,
                         Name = "\0",
                         Visible = false,
-                        BorderColor3 = FromRGB(0, 0, 0),
+                        BorderColor3 = FromRGB(60, 60, 70),
                         AnchorPoint = Vector2New(0.5, 0.5),
-                        BorderSizePixel = 0,
+                        BorderSizePixel = 1,
                         Position = UDim2New(0.8949604630470276, 0, 0.2945185601711273, 0),
                         Size = UDim2New(0, 245, 0, 159),
                         ZIndex = 2,
                         AutomaticSize = Enum.AutomaticSize.Y,
                         BackgroundColor3 = FromRGB(21, 21, 24)
-                    })  SettingsItem["Settings"]:AddToTheme({BackgroundColor3 = "Background"})
+                    })  SettingsItem["Settings"]:AddToTheme({BackgroundColor3 = "Background", BorderColor3 = "Outline"})
 
                     Instances:Create("UICorner", {
                         Parent = SettingsItem["Settings"].Instance,
@@ -5365,15 +5365,15 @@ local Library do
                     Name = "\0",
                     FontFace = Library.Font,
                     TextColor3 = FromRGB(0, 0, 0),
-                    BorderColor3 = FromRGB(0, 0, 0),
+                    BorderColor3 = FromRGB(60, 60, 70),
                     Text = "",
                     AutoButtonColor = false,
-                    BorderSizePixel = 0,
+                    BorderSizePixel = 1,
                     Size = UDim2New(1, 0, 0, 32),
                     ZIndex = 2,
                     TextSize = 14,
                     BackgroundColor3 = FromRGB(27, 26, 29)
-                })  Items["Button"]:AddToTheme({BackgroundColor3 = "Element"})
+                })  Items["Button"]:AddToTheme({BackgroundColor3 = "Element", BorderColor3 = "Outline"})
 
                 Items["Accent"] = Instances:Create("Frame", {
                     Parent = Items["Button"].Instance,
@@ -5548,17 +5548,17 @@ local Library do
                     Name = "\0",
                     FontFace = Library.Font,
                     TextColor3 = FromRGB(0, 0, 0),
-                    BorderColor3 = FromRGB(0, 0, 0),
+                    BorderColor3 = FromRGB(60, 60, 70),
                     Text = "",
                     AutoButtonColor = false,
                     AnchorPoint = Vector2New(0, 1),
-                    BorderSizePixel = 0,
+                    BorderSizePixel = 1,
                     Position = UDim2New(0, 20, 1, -3),
                     Size = UDim2New(1, -40, 0, 7),
                     ZIndex = 2,
                     TextSize = 14,
                     BackgroundColor3 = FromRGB(27, 26, 29)
-                })  Items["RealSlider"]:AddToTheme({BackgroundColor3 = "Element"})
+                })  Items["RealSlider"]:AddToTheme({BackgroundColor3 = "Element", BorderColor3 = "Outline"})
 
                 Instances:Create("UICorner", {
                     Parent = Items["RealSlider"].Instance,
@@ -5926,7 +5926,7 @@ local Library do
                 Instances:Create("UIStroke", {
                     Parent = Items["OptionHolder"].Instance,
                     Name = "\0",
-                    Color = FromRGB(35, 33, 38),
+                    Color = FromRGB(60, 60, 70),
                     ApplyStrokeMode = Enum.ApplyStrokeMode.Border
                 }):AddToTheme({Color = "Outline"})
                 
@@ -6418,13 +6418,13 @@ local Library do
                 Items["Listbox"] = Instances:Create("Frame", {
                     Parent = Listbox.Section.Items["Content"].Instance,
                     Name = "\0",
-                    BorderColor3 = FromRGB(0, 0, 0),
+                    BorderColor3 = FromRGB(60, 60, 70),
                     BackgroundTransparency = 0.6499999761581421,
                     Size = UDim2New(1, 0, 0, 30),
                     ZIndex = 2,
-                    BorderSizePixel = 0,
+                    BorderSizePixel = 1,
                     BackgroundColor3 = FromRGB(27, 26, 29)
-                })  Items["Listbox"]:AddToTheme({BackgroundColor3 = "Element"})
+                })  Items["Listbox"]:AddToTheme({BackgroundColor3 = "Element", BorderColor3 = "Outline"})
 
                 Instances:Create("UICorner", {
                     Parent = Items["Listbox"].Instance,
@@ -6447,7 +6447,7 @@ local Library do
                 Instances:Create("UIListLayout", {
                     Parent = Items["Holder"].Instance,
                     Name = "\0",
-                    Padding = UDimNew(0, 2),
+                    Padding = UDimNew(0, 3),
                     SortOrder = Enum.SortOrder.LayoutOrder
                 })
             end
@@ -6480,7 +6480,7 @@ local Library do
                     Text = Option,
                     AutoButtonColor = false,
                     BackgroundTransparency = 1,
-                    Size = UDim2New(1, 0, 0, 20),
+                    Size = UDim2New(1, 0, 0, 26),
                     BorderSizePixel = 0,
                     TextSize = 14,
                     BackgroundColor3 = FromRGB(255, 255, 255)
@@ -6631,14 +6631,14 @@ local Library do
                     Library.Flags[Listbox.Flag] = Listbox.Value
                 end
                 -- Update canvas size
-                Items["Holder"].Instance.CanvasSize = UDim2New(0, 0, 0, #Listbox.OptionsWithIndexes * 22)
+                Items["Holder"].Instance.CanvasSize = UDim2New(0, 0, 0, #Listbox.OptionsWithIndexes * 29)
             end
 
             for Index, Value in Listbox.Items do
                 Listbox:Add(Value)
             end
 
-            Items["Holder"].Instance.CanvasSize = UDim2New(0, 0, 0, #Listbox.OptionsWithIndexes * 22)
+            Items["Holder"].Instance.CanvasSize = UDim2New(0, 0, 0, #Listbox.OptionsWithIndexes * 29)
 
             if Listbox.Default then
                 Listbox:Set(Listbox.Default)
