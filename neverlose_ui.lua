@@ -4995,7 +4995,15 @@ local Library do
                         Parent = SettingsItem["Settings"].Instance,
                         Name = "\0",
                         CornerRadius = UDimNew(0, 6)
-                    })                    
+                    })
+
+                    Instances:Create("UIStroke", {
+                        Parent = SettingsItem["Settings"].Instance,
+                        Name = "\0",
+                        Color = FromRGB(80, 80, 90),
+                        Thickness = 1.5,
+                        ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+                    }):AddToTheme({Color = "Outline"})                    
 
                     SettingsItem["SettingsIcon"] = Instances:Create("ImageLabel", {
                         Parent = Items["Text"].Instance,
