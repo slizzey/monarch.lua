@@ -2327,7 +2327,9 @@ VisualExtraSection:Toggle({
             disableAtmosphericFog()
         end
     end
-}):Colorpicker({
+})
+
+VisualExtraSection:Label("Fog Color"):Colorpicker({
     Name = "Fog Color",
     Flag = "AtmosphericFogColor",
     Default = Color3.fromRGB(185, 195, 210),
