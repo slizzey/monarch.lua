@@ -4998,15 +4998,15 @@ local Library do
                     })                    
 
                     SettingsItem["SettingsIcon"] = Instances:Create("ImageLabel", {
-                        Parent = Items["Toggle"].Instance,
+                        Parent = Items["Text"].Instance,
                         Name = "\0",
                         ImageColor3 = FromRGB(141, 141, 150),
                         BorderColor3 = FromRGB(0, 0, 0),
                         Size = UDim2New(0, 14, 0, 14),
-                        AnchorPoint = Vector2New(1, 0.5),
+                        AnchorPoint = Vector2New(0, 0.5),
                         Image = "rbxassetid://101500482366184",
                         BackgroundTransparency = 1,
-                        Position = UDim2New(1, -10, 0.5, 0),
+                        Position = UDim2New(1, 6, 0.5, 1),
                         ZIndex = 2,
                         BorderSizePixel = 0,
                         BackgroundColor3 = FromRGB(255, 255, 255),
@@ -5148,10 +5148,11 @@ local Library do
                         SettingsItem["Settings"].Instance.Parent = Library.Holder.Instance
                         
                         RenderStepped = RunService.RenderStepped:Connect(function()
-                            local viewportSize = Camera.ViewportSize
+                            local windowPos = Toggle.Window.Instance.AbsolutePosition
+                            local windowSize = Toggle.Window.Instance.AbsoluteSize
                             SettingsItem["Settings"].Instance.Position = UDim2New(
-                                1, -255,
-                                0, 10)
+                                0, windowPos.X + windowSize.X + 10,
+                                0, windowPos.Y + 10)
                             SettingsItem["Settings"].Instance.Size = UDim2New(0, 245, 0, Size)
                         end)
     
