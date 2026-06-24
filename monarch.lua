@@ -120,7 +120,7 @@ local Settings = {
         FOVColor = Color3.fromRGB(100, 60, 180),
     },
     ESP = {
-        CharmsEnabled = false,
+        ChamsEnabled = false,
         TeamVisible = false,
         Color = Color3.fromRGB(100, 60, 180),
         TeamColorEnabled = false,
@@ -279,7 +279,7 @@ local ESPState = {
     enemyColor = Color3.fromRGB(100, 60, 180),
     teamColor = Color3.fromRGB(80, 160, 255),
     espColor = Color3.fromRGB(100, 60, 180),
-    charmsEnabled = false,
+    chamsEnabled = false,
 }
 
 local MiscState = {
@@ -956,7 +956,7 @@ local function createESP(plr)
         dist = distText
     }
     -- Create charm (Highlight) immediately if enabled
-    if ESPState.charmsEnabled and plr.Character then
+    if ESPState.chamsEnabled and plr.Character then
         local highlight = Instance.new("Highlight")
         highlight.Name = "Monarch_Charm"
         highlight.FillColor = ESPState.espColor
@@ -1000,10 +1000,10 @@ local function removeESP(plr)
     end
 end
 
-local function refreshCharms()
+local function refreshChams()
     for plr, highlight in pairs(ESPState.highlights) do
         if highlight and highlight.Parent then
-            highlight.Enabled = ESPState.charmsEnabled and ESPState.enabled
+            highlight.Enabled = ESPState.chamsEnabled and ESPState.enabled
             if ESPState.teamColorEnabled then
                 if isOnTeam(plr) then
                     highlight.FillColor = ESPState.teamColor
@@ -1020,7 +1020,7 @@ local function refreshCharms()
     end
     -- Re-create charms for players who don't have them but should
     for _, plr in ipairs(Players:GetPlayers()) do
-        if plr ~= LocalPlayer and ESPState.charmsEnabled and ESPState.enabled then
+        if plr ~= LocalPlayer and ESPState.chamsEnabled and ESPState.enabled then
             if not ESPState.highlights[plr] or not ESPState.highlights[plr].Parent then
                 if plr.Character then
                     local highlight = Instance.new("Highlight")
@@ -1781,26 +1781,30 @@ ESPSection:Toggle({
 })
 
 ESPSection:Toggle({
-    Name = "Show Teammates",
-    Flag = "ShowTeammates",
+    Name = "Skeletons",
+    Flag = "SkeletonESP",
     Default = false,
     Callback = function(Value)
-        ESPState.showTeam = Value
+        ESPState.showSkeleton = Value
+        for plr, _ in pairs(ESPState.drawings) do
+            removeESP(plr)
+            createESP(plr)
+        end
     end
 })
 
 ESPSection:Toggle({
-    Name = "Enable Charms",
-    Flag = "CharmsEnabled",
+    Name = "Chams",
+    Flag = "ChamsEnabled",
     Default = false,
     Callback = function(Value)
-        ESPState.charmsEnabled = Value
-        refreshCharms()
+        ESPState.chamsEnabled = Value
+        refreshChams()
     end
 })
 
 ESPSection:Toggle({
-    Name = "Box ESP",
+    Name = "Boxes",
     Flag = "BoxESP",
     Default = false,
     Callback = function(Value)
@@ -1809,7 +1813,7 @@ ESPSection:Toggle({
 })
 
 ESPSection:Toggle({
-    Name = "Name ESP",
+    Name = "Names",
     Flag = "NameESP",
     Default = false,
     Callback = function(Value)
@@ -1827,16 +1831,7 @@ ESPSection:Toggle({
 })
 
 ESPSection:Toggle({
-    Name = "Distance ESP",
-    Flag = "DistanceESP",
-    Default = false,
-    Callback = function(Value)
-        ESPState.showDistance = Value
-    end
-})
-
-ESPSection:Toggle({
-    Name = "Show Teammates",
+    Name = "Team check",
     Flag = "ShowTeammates",
     Default = false,
     Callback = function(Value)
@@ -1850,7 +1845,7 @@ ESPSection:Label("ESP Color"):Colorpicker({
     Default = Color3.fromRGB(100, 60, 180),
     Callback = function(Value)
         ESPState.espColor = Value
-        refreshCharms()
+        refreshChams()
     end
 })
 
@@ -1860,7 +1855,7 @@ ESPSection:Toggle({
     Default = false,
     Callback = function(Value)
         ESPState.teamColorEnabled = Value
-        refreshCharms()
+        refreshChams()
     end
 })
 
@@ -1870,7 +1865,7 @@ ESPSection:Label("Enemy Color"):Colorpicker({
     Default = Color3.fromRGB(100, 60, 180),
     Callback = function(Value)
         ESPState.enemyColor = Value
-        refreshCharms()
+        refreshChams()
     end
 })
 
@@ -1880,22 +1875,7 @@ ESPSection:Label("Team Color"):Colorpicker({
     Default = Color3.fromRGB(80, 160, 255),
     Callback = function(Value)
         ESPState.teamColor = Value
-        refreshCharms()
-    end
-})
-
-ESPSection:Toggle({
-    Name = "Skeleton ESP",
-    Flag = "SkeletonESP",
-    Default = false,
-    Callback = function(Value)
-        ESPState.showSkeleton = Value
-        for plr, _ in pairs(ESPState.drawings) do
-            if plr ~= LocalPlayer then
-                removeESP(plr)
-                createESP(plr)
-            end
-        end
+        refreshChams()
     end
 })
 
