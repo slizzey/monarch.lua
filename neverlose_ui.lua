@@ -5231,6 +5231,8 @@ local Library do
 
                 Settings.Items = SettingsItem
 
+                SettingsItem["SettingsIcon"].Instance.Visible = true
+
                 setmetatable(Settings, Library.Sections)
                 return Settings
             end
