@@ -4830,9 +4830,25 @@ local Library do
                 Value = false
             }
 
-            local Items = { } do 
-                Items["Toggle"] = Instances:Create("TextButton", {
+            local Items = { } do
+                Items["Container"] = Instances:Create("Frame", {
                     Parent = Toggle.Section.Items["Content"].Instance,
+                    Name = "\0",
+                    BorderColor3 = FromRGB(60, 60, 70),
+                    BorderSizePixel = 1,
+                    Size = UDim2New(1, 0, 0, 18),
+                    ZIndex = 2,
+                    BackgroundColor3 = FromRGB(21, 21, 24)
+                })  Items["Container"]:AddToTheme({BackgroundColor3 = "Section Background 2", BorderColor3 = "Outline"})
+
+                Instances:Create("UICorner", {
+                    Parent = Items["Container"].Instance,
+                    Name = "\0",
+                    CornerRadius = UDimNew(0, 4)
+                })
+
+                Items["Toggle"] = Instances:Create("TextButton", {
+                    Parent = Items["Container"].Instance,
                     Name = "\0",
                     FontFace = Library.Font,
                     TextColor3 = FromRGB(0, 0, 0),
@@ -4841,7 +4857,7 @@ local Library do
                     AutoButtonColor = false,
                     BackgroundTransparency = 1,
                     BorderSizePixel = 0,
-                    Size = UDim2New(1, 0, 0, 18),
+                    Size = UDim2New(1, 0, 1, 0),
                     ZIndex = 2,
                     TextSize = 14,
                     BackgroundColor3 = FromRGB(255, 255, 255)
@@ -5003,7 +5019,25 @@ local Library do
                         Color = FromRGB(80, 80, 90),
                         Thickness = 1.5,
                         ApplyStrokeMode = Enum.ApplyStrokeMode.Border
-                    }):AddToTheme({Color = "Outline"})                    
+                    }):AddToTheme({Color = "Outline"})
+
+                    SettingsItem["ModalOverlay"] = Instances:Create("TextButton", {
+                        Parent = Library.Holder.Instance,
+                        Name = "\0",
+                        Text = "",
+                        AutoButtonColor = false,
+                        Size = UDim2New(1, 0, 1, 0),
+                        Position = UDim2New(0, 0, 0, 0),
+                        BackgroundTransparency = 0.5,
+                        BorderSizePixel = 0,
+                        ZIndex = 6,
+                        Visible = false,
+                        BackgroundColor3 = FromRGB(0, 0, 0)
+                    })
+
+                    SettingsItem["ModalOverlay"]:Connect("MouseButton1Down", function()
+                        Settings:SetOpen(false)
+                    end)
 
                     SettingsItem["SettingsIcon"] = Instances:Create("ImageLabel", {
                         Parent = Items["Text"].Instance,
@@ -5143,7 +5177,7 @@ local Library do
     
                     Debounce = true 
     
-                    if Settings.IsOpen then 
+                    if Settings.IsOpen then
                         task.spawn(function()
                             for Index, Value in Settings.Elements do
                                 Value:RefreshPosition(true)
@@ -5153,15 +5187,16 @@ local Library do
 
                         SettingsItem["Settings"].Instance.Visible = true
                         SettingsItem["Settings"].Instance.Parent = Library.Holder.Instance
+                        SettingsItem["ModalOverlay"].Instance.Visible = true
                         
                         RenderStepped = RunService.RenderStepped:Connect(function()
-                            local toggleX = Items["Toggle"].Instance.AbsolutePosition.X
-                            local toggleY = Items["Toggle"].Instance.AbsolutePosition.Y
-                            local toggleWidth = Items["Toggle"].Instance.AbsoluteSize.X
-                            local toggleHeight = Items["Toggle"].Instance.AbsoluteSize.Y
+                            local iconX = Items["SettingsIcon"].Instance.AbsolutePosition.X
+                            local iconY = Items["SettingsIcon"].Instance.AbsolutePosition.Y
+                            local iconWidth = Items["SettingsIcon"].Instance.AbsoluteSize.X
+                            local iconHeight = Items["SettingsIcon"].Instance.AbsoluteSize.Y
 
-                            local popupX = toggleX + toggleWidth / 1.9 + 15
-                            local popupY = toggleY + toggleHeight
+                            local popupX = iconX + iconWidth / 2 - 122.5
+                            local popupY = iconY + iconHeight + 5
 
                             -- Get screen bounds
                             local screenSize = Camera.ViewportSize
@@ -5169,12 +5204,15 @@ local Library do
 
                             -- Check if popup would go off-screen vertically
                             if popupY + popupHeight > screenSize.Y then
-                                popupY = toggleY - popupHeight - 5
+                                popupY = iconY - popupHeight - 5
                             end
 
                             -- Check if popup would go off-screen horizontally
                             if popupX + 245 > screenSize.X then
-                                popupX = toggleX - 245 - 15
+                                popupX = iconX - 245 - iconWidth / 2
+                            end
+                            if popupX < 0 then
+                                popupX = 5
                             end
 
                             SettingsItem["Settings"].Instance.Position = UDim2New(0, popupX, 0, popupY)
@@ -5192,11 +5230,13 @@ local Library do
                             Value:RefreshPosition(false)
                         end
 
-                        if Library.OpenFrames[Settings] then 
+                        SettingsItem["ModalOverlay"].Instance.Visible = false
+
+                        if Library.OpenFrames[Settings] then
                             Library.OpenFrames[Settings] = nil
                         end
-    
-                        if RenderStepped then 
+
+                        if RenderStepped then
                             RenderStepped:Disconnect()
                             RenderStepped = nil
                         end
@@ -5383,9 +5423,25 @@ local Library do
                 Callback = Data.Callback or Data.callback or function() end
             }
 
-            local Items = { } do 
-                Items["Button"] = Instances:Create("TextButton", {
+            local Items = { } do
+                Items["Container"] = Instances:Create("Frame", {
                     Parent = Button.Section.Items["Content"].Instance,
+                    Name = "\0",
+                    BorderColor3 = FromRGB(60, 60, 70),
+                    BorderSizePixel = 1,
+                    Size = UDim2New(1, 0, 0, 32),
+                    ZIndex = 2,
+                    BackgroundColor3 = FromRGB(21, 21, 24)
+                })  Items["Container"]:AddToTheme({BackgroundColor3 = "Section Background 2", BorderColor3 = "Outline"})
+
+                Instances:Create("UICorner", {
+                    Parent = Items["Container"].Instance,
+                    Name = "\0",
+                    CornerRadius = UDimNew(0, 4)
+                })
+
+                Items["Button"] = Instances:Create("TextButton", {
+                    Parent = Items["Container"].Instance,
                     Name = "\0",
                     FontFace = Library.Font,
                     TextColor3 = FromRGB(0, 0, 0),
@@ -5393,7 +5449,7 @@ local Library do
                     Text = "",
                     AutoButtonColor = false,
                     BorderSizePixel = 1,
-                    Size = UDim2New(1, 0, 0, 32),
+                    Size = UDim2New(1, 0, 1, 0),
                     ZIndex = 2,
                     TextSize = 14,
                     BackgroundColor3 = FromRGB(27, 26, 29)
@@ -5538,12 +5594,28 @@ local Library do
                 Sliding = false
             }
 
-            local Items = { } do 
-                Items["Slider"] = Instances:Create("Frame", {
+            local Items = { } do
+                Items["Container"] = Instances:Create("Frame", {
                     Parent = Slider.Section.Items["Content"].Instance,
                     Name = "\0",
-                    BackgroundTransparency = 1,
+                    BorderColor3 = FromRGB(60, 60, 70),
+                    BorderSizePixel = 1,
                     Size = UDim2New(1, 0, 0, 35),
+                    ZIndex = 2,
+                    BackgroundColor3 = FromRGB(21, 21, 24)
+                })  Items["Container"]:AddToTheme({BackgroundColor3 = "Section Background 2", BorderColor3 = "Outline"})
+
+                Instances:Create("UICorner", {
+                    Parent = Items["Container"].Instance,
+                    Name = "\0",
+                    CornerRadius = UDimNew(0, 4)
+                })
+
+                Items["Slider"] = Instances:Create("Frame", {
+                    Parent = Items["Container"].Instance,
+                    Name = "\0",
+                    BackgroundTransparency = 1,
+                    Size = UDim2New(1, 0, 1, 0),
                     BorderColor3 = FromRGB(0, 0, 0),
                     ZIndex = 2,
                     BorderSizePixel = 0,
@@ -5824,12 +5896,28 @@ local Library do
                 IsOpen = false
             }
 
-            local Items = { } do 
-                Items["Dropdown"] = Instances:Create("Frame", {
+            local Items = { } do
+                Items["Container"] = Instances:Create("Frame", {
                     Parent = Dropdown.Section.Items["Content"].Instance,
                     Name = "\0",
-                    BackgroundTransparency = 1,
+                    BorderColor3 = FromRGB(60, 60, 70),
+                    BorderSizePixel = 1,
                     Size = UDim2New(1, 0, 0, 25),
+                    ZIndex = 2,
+                    BackgroundColor3 = FromRGB(21, 21, 24)
+                })  Items["Container"]:AddToTheme({BackgroundColor3 = "Section Background 2", BorderColor3 = "Outline"})
+
+                Instances:Create("UICorner", {
+                    Parent = Items["Container"].Instance,
+                    Name = "\0",
+                    CornerRadius = UDimNew(0, 4)
+                })
+
+                Items["Dropdown"] = Instances:Create("Frame", {
+                    Parent = Items["Container"].Instance,
+                    Name = "\0",
+                    BackgroundTransparency = 1,
+                    Size = UDim2New(1, 0, 1, 0),
                     BorderColor3 = FromRGB(0, 0, 0),
                     ZIndex = 2,
                     BorderSizePixel = 0,
@@ -6685,12 +6773,29 @@ local Library do
                 Name = Name or "Label"
             }
 
-            local Items = { } do 
-                Items["Label"] = Instances:Create("Frame", {
+            local Items = { } do
+                Items["Container"] = Instances:Create("Frame", {
                     Parent = Label.Section.Items["Content"].Instance,
                     Name = "\0",
-                    BackgroundTransparency = 1,
+                    BorderColor3 = FromRGB(60, 60, 70),
+                    BorderSizePixel = 1,
                     Size = UDim2New(1, 0, 0, 20),
+                    ZIndex = 2,
+                    AutomaticSize = Enum.AutomaticSize.Y,
+                    BackgroundColor3 = FromRGB(21, 21, 24)
+                })  Items["Container"]:AddToTheme({BackgroundColor3 = "Section Background 2", BorderColor3 = "Outline"})
+
+                Instances:Create("UICorner", {
+                    Parent = Items["Container"].Instance,
+                    Name = "\0",
+                    CornerRadius = UDimNew(0, 4)
+                })
+
+                Items["Label"] = Instances:Create("Frame", {
+                    Parent = Items["Container"].Instance,
+                    Name = "\0",
+                    BackgroundTransparency = 1,
+                    Size = UDim2New(1, 0, 1, 0),
                     BorderColor3 = FromRGB(0, 0, 0),
                     BorderSizePixel = 0,
                     AutomaticSize = Enum.AutomaticSize.Y,
