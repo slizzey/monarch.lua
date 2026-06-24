@@ -14,14 +14,24 @@ local RunService=game:GetService("RunService")
 local UserInputService=game:GetService("UserInputService")
 local LocalPlayer=Players.LocalPlayer
 
--- Load dependencies
-local RuntimeLib=require(script.include.RuntimeLib)
-local Roact=require(script.include.node_modules.roact.src)
-local Hooks=require(script.include.node_modules.roact-hooked.out)
-local RoduxHooks=require(script.include.node_modules.roact-rodux-hooked.out)
-local OrcaStore=require(script.include.Orca.store)
-local OrcaUI=require(script.include.Orca.ui)
-local OrcaJobs=require(script.include.Orca.jobs)
+-- Load dependencies from GitHub
+local function loadGitHub(url)
+    local success,result=pcall(function()
+        return loadstring(game:HttpGet(url))()
+    end)
+    if not success then
+        error("Failed to load: "..url.."\n"..result)
+    end
+    return result
+end
+
+local RuntimeLib=loadGitHub("https://raw.githubusercontent.com/slizzey/monarch.lua/main/orca_lib/include/RuntimeLib.lua")
+local Roact=loadGitHub("https://raw.githubusercontent.com/slizzey/monarch.lua/main/orca_lib/include/node_modules/roact/src.lua")
+local Hooks=loadGitHub("https://raw.githubusercontent.com/slizzey/monarch.lua/main/orca_lib/include/node_modules/roact-hooked/out.lua")
+local RoduxHooks=loadGitHub("https://raw.githubusercontent.com/slizzey/monarch.lua/main/orca_lib/include/node_modules/roact-rodux-hooked/out.lua")
+local OrcaStore=loadGitHub("https://raw.githubusercontent.com/slizzey/monarch.lua/main/orca_lib/include/Orca/store.lua")
+local OrcaUI=loadGitHub("https://raw.githubusercontent.com/slizzey/monarch.lua/main/orca_lib/include/Orca/ui.lua")
+local OrcaJobs=loadGitHub("https://raw.githubusercontent.com/slizzey/monarch.lua/main/orca_lib/include/Orca/jobs.lua")
 
 -- Initialize store
 local store=OrcaStore.create()
