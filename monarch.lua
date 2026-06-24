@@ -925,6 +925,12 @@ local function applySkyPreset(presetName)
     end
     if not preset then return end
 
+    -- Disable Fullbright if it's on, as it conflicts with skybox lighting
+    if MiscState.fullbright then
+        MiscState.fullbright = false
+        updateLightingState()
+    end
+
     local sky = Lighting:FindFirstChildOfClass("Sky")
 
     if preset.Skybox then
@@ -945,6 +951,7 @@ local function applySkyPreset(presetName)
     end
 
     Lighting.ClockTime = preset.Time
+    Lighting.TimeOfDay = tostring(preset.Time) .. ":00:00"
     Lighting.ExposureCompensation = preset.Exposure
     if preset.Ambient then Lighting.Ambient = preset.Ambient end
     if preset.OutdoorAmbient then Lighting.OutdoorAmbient = preset.OutdoorAmbient end
