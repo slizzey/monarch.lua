@@ -270,6 +270,9 @@ local MiscState = {
     noFog = false,
     antiAFK = false,
     fpsCounter = true,
+    atmosphericFog = false,
+    rain = false,
+    floatingLamps = false,
 }
 
 local TrollState = {
@@ -297,6 +300,544 @@ local originalLighting = {
     FogEnd = Lighting.FogEnd,
     FogStart = Lighting.FogStart,
 }
+
+-- Atmospheric Fog
+local atmosphericFogSaved = {}
+local atmosphericFogInstance = nil
+
+local function enableAtmosphericFog()
+    if MiscState.atmosphericFog then return end
+    MiscState.atmosphericFog = true
+    atmosphericFogSaved.FogColor = Lighting.FogColor
+    atmosphericFogSaved.FogStart = Lighting.FogStart
+    atmosphericFogSaved.FogEnd = Lighting.FogEnd
+    atmosphericFogSaved.Atmosphere = Lighting:FindFirstChildOfClass("Atmosphere")
+    for _, obj in pairs(Lighting:GetChildren()) do
+        if obj.Name == "PortalAura" and obj:IsA("Atmosphere") then
+            obj:Destroy()
+        end
+    end
+    atmosphericFogInstance = Instance.new("Atmosphere", Lighting)
+    atmosphericFogInstance.Name = "PortalAura"
+    atmosphericFogInstance.Color = Color3.fromRGB(185, 195, 210)
+    atmosphericFogInstance.Decay = Color3.fromRGB(170, 175, 185)
+    atmosphericFogInstance.Density = 0.42
+    atmosphericFogInstance.Haze = 3.5
+    atmosphericFogInstance.Glare = 0.5
+    atmosphericFogInstance.Offset = 0
+    Lighting.FogColor = Color3.fromRGB(185, 195, 210)
+    Lighting.FogStart = 50
+    Lighting.FogEnd = 900
+end
+
+local function disableAtmosphericFog()
+    if not MiscState.atmosphericFog then return end
+    MiscState.atmosphericFog = false
+    Lighting.FogColor = atmosphericFogSaved.FogColor
+    Lighting.FogStart = atmosphericFogSaved.FogStart
+    Lighting.FogEnd = atmosphericFogSaved.FogEnd
+    if atmosphericFogInstance then
+        atmosphericFogInstance:Destroy()
+        atmosphericFogInstance = nil
+    end
+end
+
+-- Rain
+local rainHeartbeatConn = nil
+local rainFolder = nil
+local rainRayParams = nil
+local rainSplashPool = {}
+local rainSplashIndex = 0
+local rainActiveSplashes = {}
+local rainDrops = {}
+local rainDropParts = {}
+local rainFrameCount = 0
+
+local RAIN_CONFIG = {
+    RAIN_COUNT = 200,
+    RAIN_RADIUS = 40,
+    RAIN_HEIGHT = 30,
+    FALL_SPEED = 80,
+    WIND_X = 2,
+    SPEED_VARIANCE = 15,
+    RAYCAST_EVERY = 8,
+    SPLASH_POOL = 60,
+}
+
+local rainWindAngleCF = CFrame.Angles(math.rad(RAIN_CONFIG.WIND_X * 3), 0, 0)
+local RAIN_LERP_SPEED = 25
+
+local function rainGetGroundY(pos)
+    local result = Workspace:Raycast(pos, Vector3.new(0, -100, 0), rainRayParams)
+    return result and result.Position.Y or (pos.Y - 100)
+end
+
+local function rainPlaySplash(pos)
+    rainSplashIndex = (rainSplashIndex % RAIN_CONFIG.SPLASH_POOL) + 1
+    local s = rainSplashPool[rainSplashIndex]
+    if not s then return end
+    s.Size = Vector3.new(0.08, 0.03, 0.08)
+    s.Position = Vector3.new(pos.X, pos.Y + 0.04, pos.Z)
+    s.Transparency = 0.3
+    rainActiveSplashes[s] = { timer = 0 }
+end
+
+local function initRain()
+    local character = LocalPlayer.Character
+    if not character then return end
+    local rootPart = character:FindFirstChild("HumanoidRootPart")
+    if not rootPart then return end
+
+    local rootPos = rootPart.Position
+
+    rainRayParams = RaycastParams.new()
+    rainRayParams.FilterType = Enum.RaycastFilterType.Exclude
+    rainRayParams.FilterDescendantsInstances = {rainFolder, character}
+
+    for i = 1, RAIN_CONFIG.SPLASH_POOL do
+        local s = Instance.new("Part")
+        s.Size = Vector3.new(0.1, 0.03, 0.1)
+        s.Material = Enum.Material.Glass
+        s.Color = Color3.fromRGB(200, 225, 255)
+        s.Transparency = 0.5
+        s.CanCollide = false
+        s.Anchored = true
+        s.CastShadow = false
+        s.Parent = rainFolder
+        rainSplashPool[i] = s
+    end
+
+    for i = 1, RAIN_CONFIG.RAIN_COUNT do
+        local angle = math.random() * math.pi * 2
+        local radius = math.sqrt(math.random()) * RAIN_CONFIG.RAIN_RADIUS
+
+        local drop = Instance.new("Part")
+        drop.Size = Vector3.new(0.04, 2.2, 0.04)
+        drop.Material = Enum.Material.Glass
+        drop.Color = Color3.fromRGB(200, 225, 255)
+        drop.Transparency = 0.45
+        drop.CanCollide = false
+        drop.Anchored = true
+        drop.CastShadow = false
+        drop.Parent = rainFolder
+        rainDropParts[i] = drop
+
+        local spawnX = rootPos.X + math.cos(angle) * radius
+        local spawnY = rootPos.Y + math.random(5, RAIN_CONFIG.RAIN_HEIGHT)
+        local spawnZ = rootPos.Z + math.sin(angle) * radius
+
+        rainDrops[i] = {
+            x = spawnX,
+            y = spawnY,
+            z = spawnZ,
+            speed = RAIN_CONFIG.FALL_SPEED + math.random(-RAIN_CONFIG.SPEED_VARIANCE, RAIN_CONFIG.SPEED_VARIANCE),
+            groundY = spawnY - 100,
+            rayTimer = math.random(1, RAIN_CONFIG.RAYCAST_EVERY),
+            px = spawnX,
+            py = spawnY,
+            pz = spawnZ,
+        }
+
+        drop.CFrame = CFrame.new(spawnX, spawnY, spawnZ) * rainWindAngleCF
+    end
+end
+
+local function rainOnHeartbeat(dt)
+    if not MiscState.rain then return end
+    dt = math.min(dt, 0.05)
+    rainFrameCount = rainFrameCount + 1
+
+    local character = LocalPlayer.Character
+    if not character then return end
+    local rootPart = character:FindFirstChild("HumanoidRootPart")
+    if not rootPart then return end
+
+    if rainFrameCount % 60 == 0 then
+        rainRayParams.FilterDescendantsInstances = {rainFolder, character}
+    end
+
+    local rootPos = rootPart.Position
+
+    for s, data in pairs(rainActiveSplashes) do
+        data.timer = data.timer + dt
+        local t = math.min(data.timer / 0.22, 1)
+        local ease = 1 - (1 - t) * (1 - t)
+        s.Size = Vector3.new(0.08 + 0.65 * ease, 0.03, 0.08 + 0.65 * ease)
+        s.Transparency = 0.3 + 0.7 * ease
+        if t >= 1 then
+            rainActiveSplashes[s] = nil
+        end
+    end
+
+    for i = 1, RAIN_CONFIG.RAIN_COUNT do
+        local d = rainDrops[i]
+        local drop = rainDropParts[i]
+        if not d or not drop then continue end
+
+        d.x = d.x + RAIN_CONFIG.WIND_X * dt
+        d.y = d.y - d.speed * dt
+
+        local alpha = math.min(RAIN_LERP_SPEED * dt, 1)
+        d.px = d.px + (d.x - d.px) * alpha
+        d.py = d.py + (d.y - d.py) * alpha
+        d.pz = d.pz + (d.z - d.pz) * alpha
+
+        d.rayTimer = d.rayTimer + 1
+        if d.rayTimer >= RAIN_CONFIG.RAYCAST_EVERY then
+            d.rayTimer = 0
+            d.groundY = rainGetGroundY(Vector3.new(d.x, d.y + 5, d.z))
+        end
+
+        if d.y <= d.groundY + 1.1 then
+            rainPlaySplash(Vector3.new(d.x, d.groundY, d.z))
+
+            local angle = math.random() * math.pi * 2
+            local radius = math.sqrt(math.random()) * RAIN_CONFIG.RAIN_RADIUS
+            d.x = rootPos.X + math.cos(angle) * radius
+            d.y = rootPos.Y + RAIN_CONFIG.RAIN_HEIGHT
+            d.z = rootPos.Z + math.sin(angle) * radius
+            d.px = d.x
+            d.py = d.y
+            d.pz = d.z
+            d.groundY = d.y - 100
+            d.rayTimer = 0
+        end
+
+        drop.CFrame = CFrame.new(d.px, d.py, d.pz) * rainWindAngleCF
+    end
+end
+
+local function enableRain()
+    if MiscState.rain then return end
+    MiscState.rain = true
+    rainFolder = Instance.new("Folder")
+    rainFolder.Name = "RainEffect"
+    rainFolder.Parent = Workspace
+    rainSplashPool = {}
+    rainSplashIndex = 0
+    rainActiveSplashes = {}
+    rainDrops = {}
+    rainDropParts = {}
+    rainFrameCount = 0
+    initRain()
+    rainHeartbeatConn = RunService.Heartbeat:Connect(rainOnHeartbeat)
+end
+
+local function disableRain()
+    MiscState.rain = false
+    if rainHeartbeatConn then rainHeartbeatConn:Disconnect() end
+    if rainFolder then rainFolder:Destroy() end
+    rainSplashPool = {}
+    rainActiveSplashes = {}
+    rainDrops = {}
+    rainDropParts = {}
+end
+
+-- Floating Lamps
+local lampsUpdateConn = nil
+local lampsFolder = nil
+local lamps = {}
+local LAMPS_MAX = 7
+
+local function createLamp(index)
+    local char = LocalPlayer.Character
+    local hrp = char and char:FindFirstChild("HumanoidRootPart")
+    if not hrp then return end
+
+    local cap = Instance.new("Part")
+    cap.Size = Vector3.new(1.4, 0.2, 1.4)
+    cap.Material = Enum.Material.SmoothPlastic
+    cap.Color = Color3.fromRGB(200, 45, 45)
+    cap.CanCollide = false
+    cap.CastShadow = false
+    cap.Anchored = true
+    cap.Parent = lampsFolder
+
+    local body = Instance.new("Part")
+    body.Size = Vector3.new(1.2, 1.8, 1.2)
+    body.Material = Enum.Material.Neon
+    body.Color = Color3.fromRGB(255, 220, 150)
+    body.Transparency = 0.25
+    body.CanCollide = false
+    body.CastShadow = false
+    body.Anchored = true
+    body.Parent = lampsFolder
+
+    local gold = Instance.new("Part")
+    gold.Size = Vector3.new(1.3, 0.12, 1.3)
+    gold.Material = Enum.Material.Metal
+    gold.Color = Color3.fromRGB(220, 170, 50)
+    gold.CanCollide = false
+    gold.CastShadow = false
+    gold.Anchored = true
+    gold.Parent = lampsFolder
+
+    local bottom = Instance.new("Part")
+    bottom.Size = Vector3.new(1.4, 0.2, 1.4)
+    bottom.Material = Enum.Material.SmoothPlastic
+    bottom.Color = Color3.fromRGB(200, 45, 45)
+    bottom.CanCollide = false
+    bottom.CastShadow = false
+    bottom.Anchored = true
+    bottom.Parent = lampsFolder
+
+    local fringes = {}
+    for i = 1, 6 do
+        local fringe = Instance.new("Part")
+        fringe.Size = Vector3.new(0.06, 0.7, 0.06)
+        fringe.Material = Enum.Material.Fabric
+        fringe.Color = Color3.fromRGB(220, 60, 60)
+        fringe.CanCollide = false
+        fringe.CastShadow = false
+        fringe.Anchored = true
+        fringe.Parent = lampsFolder
+        table.insert(fringes, fringe)
+    end
+
+    local tassel = Instance.new("Part")
+    tassel.Size = Vector3.new(0.1, 0.9, 0.1)
+    tassel.Material = Enum.Material.Fabric
+    tassel.Color = Color3.fromRGB(200, 50, 50)
+    tassel.CanCollide = false
+    tassel.CastShadow = false
+    tassel.Anchored = true
+    tassel.Parent = lampsFolder
+
+    local flame = Instance.new("Part")
+    flame.Size = Vector3.new(0.35, 0.45, 0.35)
+    flame.Material = Enum.Material.Neon
+    flame.Color = Color3.fromRGB(255, 240, 180)
+    flame.CanCollide = false
+    flame.CastShadow = false
+    flame.Anchored = true
+    flame.Parent = lampsFolder
+
+    local hook = Instance.new("Part")
+    hook.Size = Vector3.new(0.08, 0.4, 0.08)
+    hook.Material = Enum.Material.Metal
+    hook.Color = Color3.fromRGB(180, 140, 40)
+    hook.CanCollide = false
+    hook.CastShadow = false
+    hook.Anchored = true
+    hook.Parent = lampsFolder
+
+    local chain = Instance.new("Part")
+    chain.Size = Vector3.new(0.05, 1.5, 0.05)
+    chain.Material = Enum.Material.Metal
+    chain.Color = Color3.fromRGB(160, 120, 40)
+    chain.CanCollide = false
+    chain.CastShadow = false
+    chain.Anchored = true
+    chain.Parent = lampsFolder
+
+    local light = Instance.new("PointLight")
+    light.Color = Color3.fromRGB(255, 200, 100)
+    light.Brightness = 5
+    light.Range = 16
+    light.Shadows = false
+    light.Parent = flame
+
+    local trail = Instance.new("Trail")
+    trail.Color = ColorSequence.new{
+        ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 220, 120)),
+        ColorSequenceKeypoint.new(0.5, Color3.fromRGB(255, 180, 60)),
+        ColorSequenceKeypoint.new(1, Color3.fromRGB(255, 140, 30))
+    }
+    trail.Transparency = NumberSequence.new{
+        NumberSequenceKeypoint.new(0, 0.2),
+        NumberSequenceKeypoint.new(1, 1)
+    }
+    trail.Lifetime = 0.8
+    trail.WidthScale = NumberSequence.new{
+        NumberSequenceKeypoint.new(0, 0.15),
+        NumberSequenceKeypoint.new(1, 0)
+    }
+    trail.LightEmission = 0.6
+    trail.Parent = flame
+
+    local att0 = Instance.new("Attachment")
+    att0.Position = Vector3.new(0, 0.3, 0)
+    att0.Parent = flame
+
+    local att1 = Instance.new("Attachment")
+    att1.Position = Vector3.new(0, -0.3, 0)
+    att1.Parent = flame
+
+    trail.Attachment0 = att0
+    trail.Attachment1 = att1
+
+    local angle = (index / LAMPS_MAX) * math.pi * 2
+    local radius = 35 + math.random(0, 150) / 10
+    local height = 12 + math.random(0, 100) / 10
+
+    local startPos = hrp.Position + Vector3.new(
+        math.cos(angle) * radius,
+        height,
+        math.sin(angle) * radius
+    )
+
+    local p = startPos
+    hook.CFrame = CFrame.new(p + Vector3.new(0, 2.2, 0))
+    chain.CFrame = CFrame.new(p + Vector3.new(0, 1.2, 0))
+    cap.CFrame = CFrame.new(p + Vector3.new(0, 0.9, 0))
+    body.CFrame = CFrame.new(p)
+    gold.CFrame = CFrame.new(p)
+    bottom.CFrame = CFrame.new(p - Vector3.new(0, 0.9, 0))
+    flame.CFrame = CFrame.new(p + Vector3.new(0, 0.1, 0))
+    tassel.CFrame = CFrame.new(p - Vector3.new(0, 1.4, 0))
+
+    for i, fringe in ipairs(fringes) do
+        local a = (i - 1) * math.pi / 3
+        fringe.CFrame = CFrame.new(p - Vector3.new(0, 1.1, 0) + Vector3.new(math.cos(a) * 0.5, 0, math.sin(a) * 0.5))
+    end
+
+    table.insert(lamps, {
+        cap = cap,
+        body = body,
+        gold = gold,
+        bottom = bottom,
+        fringes = fringes,
+        tassel = tassel,
+        flame = flame,
+        hook = hook,
+        chain = chain,
+        light = light,
+        trail = trail,
+        angle = angle,
+        radius = radius,
+        baseHeight = height,
+        bobPhase = math.random(0, 1000) / 100,
+        bobSpeed = math.random(15, 35) / 100,
+        bobAmp = math.random(60, 120) / 100,
+        orbitSpeed = math.random(6, 15) / 100,
+        orbitDir = math.random() > 0.5 and 1 or -1,
+        swayPhase = math.random(0, 1000) / 100,
+        flamePhase = math.random(0, 1000) / 100,
+        fringePhase = math.random(0, 1000) / 100,
+        targetPos = startPos,
+        currentPos = startPos,
+        velocity = Vector3.zero,
+        accel = Vector3.zero,
+    })
+end
+
+local function lampsOnUpdate(dt)
+    local hrp = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+    if not hrp then return end
+
+    local time = tick()
+    local playerPos = hrp.Position
+
+    for _, l in ipairs(lamps) do
+        if not l.flame or not l.flame.Parent then continue end
+
+        l.angle = l.angle + dt * l.orbitSpeed * l.orbitDir
+
+        local roseT = time * 0.12 + l.swayPhase
+        local roseX = math.sin(roseT * 2) * math.cos(roseT * 0.6) * 1.5
+        local roseZ = math.sin(roseT * 2) * math.sin(roseT * 0.6) * 1.5
+
+        local bob = math.sin(time * l.bobSpeed + l.bobPhase) * l.bobAmp
+        local drift = math.sin(time * 0.1 + l.swayPhase) * 0.5
+
+        local targetX = playerPos.X + math.cos(l.angle) * l.radius + roseX
+        local targetZ = playerPos.Z + math.sin(l.angle) * l.radius + roseZ
+        local targetY = playerPos.Y + l.baseHeight + bob + drift
+
+        l.targetPos = Vector3.new(targetX, targetY, targetZ)
+        local diff = l.targetPos - l.currentPos
+        local omega = 2.0
+        local zeta = 0.9
+        l.accel = diff * (omega * omega) - l.velocity * (zeta * omega * 2)
+        l.velocity = l.velocity + l.accel * dt
+        l.currentPos = l.currentPos + l.velocity * dt
+
+        local dist = (l.currentPos - playerPos).Magnitude
+        if dist > 55 then
+            l.currentPos = playerPos + (l.currentPos - playerPos).Unit * 55
+            l.velocity = l.velocity * 0.3
+        end
+
+        local pos = l.currentPos
+
+        local tiltX = math.clamp(l.velocity.Z * 5, -6, 6)
+        local tiltZ = math.clamp(-l.velocity.X * 5, -6, 6)
+        local swayTilt = math.sin(time * 0.35 + l.swayPhase) * 1.5
+
+        local flameJump = math.sin(time * 1.8 + l.flamePhase) * 0.1
+        local flameSway = math.sin(time * 2.8 + l.flamePhase * 1.2) * 0.05
+        local flicker = 1 + math.sin(time * 5 + l.flamePhase) * 0.07 + math.sin(time * 9) * 0.03
+
+        local fringeSwing = math.sin(time * 2 + l.fringePhase) * 8
+
+        local cf = CFrame.new(pos) * CFrame.Angles(
+            math.rad(tiltX + swayTilt),
+            0,
+            math.rad(tiltZ)
+        )
+
+        l.hook.CFrame = cf * CFrame.new(0, 2.2, 0)
+        l.chain.CFrame = cf * CFrame.new(0, 1.2, 0)
+        l.cap.CFrame = cf * CFrame.new(0, 0.9, 0)
+        l.body.CFrame = cf
+        l.gold.CFrame = cf
+        l.bottom.CFrame = cf * CFrame.new(0, -0.9, 0)
+        l.flame.CFrame = cf * CFrame.new(flameSway, 0.1 + flameJump, 0) * CFrame.Angles(0, time, 0)
+        l.tassel.CFrame = cf * CFrame.new(0, -1.4, 0) * CFrame.Angles(math.rad(fringeSwing * 0.5), 0, 0)
+
+        for i, fringe in ipairs(l.fringes) do
+            local a = (i - 1) * math.pi / 3 + l.angle * 0.1
+            local swing = math.sin(time * 2.5 + l.fringePhase + i) * 12
+            fringe.CFrame = cf * CFrame.new(
+                math.cos(a) * 0.5,
+                -1.1,
+                math.sin(a) * 0.5
+            ) * CFrame.Angles(math.rad(swing), 0, 0)
+        end
+
+        l.light.Brightness = 5 * flicker
+        l.light.Range = 16 + math.sin(time) * 2
+
+        local warmth = math.sin(time * 0.5 + l.swayPhase) * 10
+        l.light.Color = Color3.fromRGB(
+            255,
+            math.clamp(200 + warmth, 190, 215),
+            math.clamp(100 + warmth * 0.3, 92, 110)
+        )
+        l.flame.Color = Color3.fromRGB(
+            255,
+            math.clamp(240 + warmth * 0.1, 235, 248),
+            math.clamp(180 + warmth * 0.1, 175, 190)
+        )
+        l.body.Color = Color3.fromRGB(
+            255,
+            math.clamp(220 + warmth * 0.2, 212, 230),
+            math.clamp(150 + warmth * 0.3, 142, 162)
+        )
+    end
+end
+
+local function enableFloatingLamps()
+    if MiscState.floatingLamps then return end
+    MiscState.floatingLamps = true
+    local old = Workspace:FindFirstChild("PortalVisual_Lamps")
+    if old then old:Destroy() end
+    lampsFolder = Instance.new("Folder")
+    lampsFolder.Name = "PortalVisual_Lamps"
+    lampsFolder.Parent = Workspace
+    lamps = {}
+    for i = 1, LAMPS_MAX do
+        createLamp(i)
+    end
+    lampsUpdateConn = RunService.RenderStepped:Connect(lampsOnUpdate)
+end
+
+local function disableFloatingLamps()
+    MiscState.floatingLamps = false
+    if lampsUpdateConn then lampsUpdateConn:Disconnect() end
+    if lampsFolder then lampsFolder:Destroy() end
+    lamps = {}
+end
 
 local FOVring = Drawing.new("Circle")
 FOVring.Visible = false
@@ -1771,6 +2312,45 @@ VisualExtraSection:Slider({
         local minutes = math.floor((Value - hours) * 60)
         local timeString = string.format("%02d:%02d:00", hours, minutes)
         Lighting.TimeOfDay = timeString
+    end
+})
+
+VisualExtraSection:Toggle({
+    Name = "Atmospheric Fog",
+    Flag = "AtmosphericFog",
+    Default = false,
+    Callback = function(Value)
+        if Value then
+            enableAtmosphericFog()
+        else
+            disableAtmosphericFog()
+        end
+    end
+})
+
+VisualExtraSection:Toggle({
+    Name = "Rain",
+    Flag = "Rain",
+    Default = false,
+    Callback = function(Value)
+        if Value then
+            enableRain()
+        else
+            disableRain()
+        end
+    end
+})
+
+VisualExtraSection:Toggle({
+    Name = "Floating Lamps",
+    Flag = "FloatingLamps",
+    Default = false,
+    Callback = function(Value)
+        if Value then
+            enableFloatingLamps()
+        else
+            disableFloatingLamps()
+        end
     end
 })
 
