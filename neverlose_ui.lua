@@ -59,7 +59,7 @@ local Library do
         Theme =  { },
         ToClean = { },
 
-        MenuKeybind = tostring(Enum.KeyCode.Insert), 
+        MenuKeybind = tostring(Enum.KeyCode.RightShift), 
 
         Flags = { },
 
@@ -2835,7 +2835,8 @@ local Library do
                     Size = UDim2New(0, 32, 0, 32),
                     ZIndex = 2,
                     TextSize = 14,
-                    BackgroundColor3 = FromRGB(27, 25, 29)
+                    BackgroundColor3 = FromRGB(27, 25, 29),
+                    Visible = false
                 })  Items["SettingsButton"]:AddToTheme({BackgroundColor3 = "Element"})
                 
                 Instances:Create("UICorner", {

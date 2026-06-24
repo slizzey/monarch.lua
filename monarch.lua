@@ -49,7 +49,6 @@ local Window = Library:Window({
     Logo = "120959262762131"
 })
 
-local KeybindList = Library:KeybindList("Keybinds")
 Library:Watermark({
     "Monarch",
     "Premium",
@@ -71,10 +70,6 @@ end)
 
 local hasFileSystem = (writefile and readfile and isfile)
 local LOGO_FILE_NAME = "Monarch_Logo.png"
-local CONFIG_FILE = "Monarch_Config.json"
-local CONFIG_DIR = "Monarch_Configs"
-local CONFIG_INDEX_FILE = "Monarch_ConfigIndex.json"
-local AUTOLOAD_FLAG_FILE = "Monarch_AutoLoad.txt"
 
 local Settings = {
     Aim = {
@@ -150,10 +145,9 @@ local Settings = {
         Fullbright = false,
         NoFog = false,
         AntiAFK = false,
-        MenuKeybind = Enum.KeyCode.Insert,
+        MenuKeybind = Enum.KeyCode.RightShift,
         LogoAssetId = "",
         LogoFileName = "Monarch_Logo.png",
-        AutoLoadConfig = true,
         UnlockMouseOnMenu = true,
         TopMostUI = true,
         StreamProof = false,
@@ -170,14 +164,6 @@ local Settings = {
         HeadSit = false,
         SpinTroll = false,
         Invisible = false,
-    },
-    Binds = {
-        AimToggle = false,
-        NoclipToggle = false,
-        FlyToggle = false,
-        EspToggle = false,
-        PanicKey = false,
-        TriggerbotToggle = false,
     },
 }
 
@@ -220,8 +206,6 @@ local GUI = {
     BindToastFrame = nil,
     BindToastLabel = nil,
     bindToastToken = 0,
-    savedConfigNames = {},
-    configDropdownOpen = false,
     menuOpen = false,
     KeybindCaptureActive = false,
     savedMouseState = nil,
@@ -1337,164 +1321,6 @@ local function rejoinGame()
     TeleportService:Teleport(game.PlaceId)
 end
 
-local function ensureFolders()
-    if hasFileSystem then
-        pcall(function()
-            if not isfolder(Library.Folders.Directory) then
-                makefolder(Library.Folders.Directory)
-            end
-            if not isfolder(Library.Folders.Configs) then
-                makefolder(Library.Folders.Configs)
-            end
-            if not isfolder(Library.Folders.Assets) then
-                makefolder(Library.Folders.Assets)
-            end
-        end)
-    end
-end
-
-local function loadConfigIndex()
-    if not hasFileSystem then return {} end
-    pcall(function()
-        if isfile(CONFIG_INDEX_FILE) then
-            local content = readfile(CONFIG_INDEX_FILE)
-            local decoded = HttpService:JSONDecode(content)
-            if type(decoded) == "table" then
-                return decoded
-            end
-        end
-    end)
-    return {}
-end
-
-local function saveConfigIndex(index)
-    if not hasFileSystem then return end
-    pcall(function()
-        local encoded = HttpService:JSONEncode(index)
-        writefile(CONFIG_INDEX_FILE, encoded)
-    end)
-end
-
-local function refreshConfigList()
-    GUI.savedConfigNames = {}
-    if not hasFileSystem then return end
-    pcall(function()
-        local files = listfiles(Library.Folders.Configs)
-        for _, file in ipairs(files) do
-            local name = file:match("([^/\\]+)$")
-            if name and name:sub(-5) == ".json" then
-                table.insert(GUI.savedConfigNames, name:sub(1, -6))
-            end
-        end
-    end)
-end
-
-local function saveConfig(name)
-    if not hasFileSystem then return false end
-    ensureFolders()
-    if not name or name == "" then return false end
-    local config = {
-        Aim = Settings.Aim,
-        ESP = Settings.ESP,
-        Movement = Settings.Movement,
-        Misc = Settings.Misc,
-        Troll = Settings.Troll,
-        Binds = Settings.Binds,
-    }
-    local fileName = Library.Folders.Configs .. "/" .. name .. ".json"
-    local success = pcall(function()
-        local encoded = HttpService:JSONEncode(config)
-        writefile(fileName, encoded)
-    end)
-    if success then
-        local index = loadConfigIndex()
-        if not table.find(index, name) then
-            table.insert(index, name)
-            saveConfigIndex(index)
-        end
-        refreshConfigList()
-        notify("Monarch", "Config saved: " .. name, 3)
-        return true
-    end
-    return false
-end
-
-local function loadConfig(name)
-    if not hasFileSystem then return false end
-    if not name or name == "" then return false end
-    local fileName = Library.Folders.Configs .. "/" .. name .. ".json"
-    local success, decoded = pcall(function()
-        local content = readfile(fileName)
-        return HttpService:JSONDecode(content)
-    end)
-    if success and type(decoded) == "table" then
-        if decoded.Aim then Settings.Aim = decoded.Aim end
-        if decoded.ESP then Settings.ESP = decoded.ESP end
-        if decoded.Movement then Settings.Movement = decoded.Movement end
-        if decoded.Misc then Settings.Misc = decoded.Misc end
-        if decoded.Troll then Settings.Troll = decoded.Troll end
-        if decoded.Binds then Settings.Binds = decoded.Binds end
-        notify("Monarch", "Config loaded: " .. name, 3)
-        return true
-    end
-    return false
-end
-
-local function deleteConfig(name)
-    if not hasFileSystem then return false end
-    if not name or name == "" then return false end
-    local fileName = Library.Folders.Configs .. "/" .. name .. ".json"
-    local success = pcall(function()
-        delfile(fileName)
-    end)
-    if success then
-        local index = loadConfigIndex()
-        local newIndex = {}
-        for _, n in ipairs(index) do
-            if n ~= name then
-                table.insert(newIndex, n)
-            end
-        end
-        saveConfigIndex(newIndex)
-        refreshConfigList()
-        notify("Monarch", "Config deleted: " .. name, 3)
-        return true
-    end
-    return false
-end
-
-local function getAutoLoadConfig()
-    if not hasFileSystem then return nil end
-    pcall(function()
-        if isfile(AUTOLOAD_FLAG_FILE) then
-            local content = readfile(AUTOLOAD_FLAG_FILE)
-            return content
-        end
-    end)
-    return nil
-end
-
-local function setAutoLoadConfig(name)
-    if not hasFileSystem then return end
-    pcall(function()
-        if name and name ~= "" then
-            writefile(AUTOLOAD_FLAG_FILE, name)
-        else
-            if isfile(AUTOLOAD_FLAG_FILE) then
-                delfile(AUTOLOAD_FLAG_FILE)
-            end
-        end
-    end)
-end
-
-ensureFolders()
-refreshConfigList()
-local autoLoadName = getAutoLoadConfig()
-if autoLoadName and Settings.Misc.AutoLoadConfig then
-    task.wait(0.5)
-    loadConfig(autoLoadName)
-end
-
 local AimPage = Window:Page({Name = "Aim"})
 local AimMainSection = AimPage:Section({Name = "Main", Side = 1})
 
@@ -1504,16 +1330,6 @@ AimMainSection:Toggle({
     Default = false,
     Callback = function(Value)
         AimState.aimbotOn = Value
-    end
-})
-
-AimMainSection:Keybind({
-    Name = "Aim Key",
-    Flag = "AimKeybind",
-    Default = Enum.UserInputType.MouseButton2,
-    Mode = "Hold",
-    Callback = function(Value)
-        Settings.Aim.Keybind = Value
     end
 })
 
@@ -2332,15 +2148,6 @@ MiscSection:Toggle({
 })
 
 MiscSection:Toggle({
-    Name = "Auto Load Config",
-    Flag = "AutoLoadConfig",
-    Default = true,
-    Callback = function(Value)
-        Settings.Misc.AutoLoadConfig = Value
-    end
-})
-
-MiscSection:Toggle({
     Name = "Unlock Mouse on Menu",
     Flag = "UnlockMouseOnMenu",
     Default = true,
@@ -2361,107 +2168,6 @@ MiscSection:Toggle({
         if GUI.BindToastGui then
             GUI.BindToastGui.ResetOnSpawn = not Value
         end
-    end
-})
-
-local ConfigSection = MiscPage:Section({Name = "Config", Side = 2})
-
-ConfigSection:Button({
-    Name = "Save Config",
-    Callback = function()
-        local name = "Default"
-        saveConfig(name)
-    end
-})
-
-ConfigSection:Button({
-    Name = "Load Config",
-    Callback = function()
-        local name = "Default"
-        loadConfig(name)
-    end
-})
-
-ConfigSection:Button({
-    Name = "Delete Config",
-    Callback = function()
-        local name = "Default"
-        deleteConfig(name)
-    end
-})
-
-ConfigSection:Toggle({
-    Name = "Auto Load: Default",
-    Flag = "AutoLoadDefault",
-    Default = false,
-    Callback = function(Value)
-        if Value then
-            setAutoLoadConfig("Default")
-        else
-            setAutoLoadConfig(nil)
-        end
-    end
-})
-
-local KeybindSection = MiscPage:Section({Name = "Keybinds", Side = 2})
-
-KeybindSection:Keybind({
-    Name = "Toggle Aimbot",
-    Flag = "AimToggle",
-    Default = false,
-    Mode = "Toggle",
-    Callback = function(Value)
-        Settings.Binds.AimToggle = Value
-    end
-})
-
-KeybindSection:Keybind({
-    Name = "Toggle Noclip",
-    Flag = "NoclipToggle",
-    Default = false,
-    Mode = "Toggle",
-    Callback = function(Value)
-        Settings.Binds.NoclipToggle = Value
-    end
-})
-
-KeybindSection:Keybind({
-    Name = "Toggle Fly",
-    Flag = "FlyToggle",
-    Default = false,
-    Mode = "Toggle",
-    Callback = function(Value)
-        Settings.Binds.FlyToggle = Value
-    end
-})
-
-KeybindSection:Keybind({
-    Name = "Toggle ESP",
-    Flag = "EspToggle",
-    Default = false,
-    Mode = "Toggle",
-    Callback = function(Value)
-        Settings.Binds.EspToggle = Value
-    end
-})
-
-KeybindSection:Keybind({
-    Name = "Panic Key",
-    Flag = "PanicKey",
-    Default = false,
-    Mode = "Toggle",
-    Callback = function(Value)
-        Settings.Binds.PanicKey = Value
-    end
-})
-
-KeybindSection:Keybind({
-    Name = "Toggle Triggerbot",
-    Flag = "TriggerbotToggle",
-    Default = false,
-    Mode = "Toggle",
-    Callback = function(Value)
-        Settings.Binds.TriggerbotToggle = Value
     end
 })
 
@@ -2486,43 +2192,6 @@ UserInputService.InputBegan:Connect(function(input, processed)
         if AimState.lockMode == "Toggle" then
             AimState.toggleActive = not AimState.toggleActive
         end
-    end
-    if input.KeyCode == Settings.Binds.PanicKey then
-        AimState.aimbotOn = false
-        ESPState.enabled = false
-        MovementState.noclipOn = false
-        MovementState.flyOn = false
-        AimState.triggerbotOn = false
-        AimState.autoShootOn = false
-        TrollState.constantFling = false
-        TrollState.orbitTarget = false
-        TrollState.spinTroll = false
-        TrollState.headSit = false
-        clearFlingForce()
-        clearOrbit()
-        clearSpinTroll()
-        clearHeadSit()
-        showBindToggleToast("Panic", false)
-    end
-    if input.KeyCode == Settings.Binds.AimToggle then
-        AimState.aimbotOn = not AimState.aimbotOn
-        showBindToggleToast("Aimbot", AimState.aimbotOn)
-    end
-    if input.KeyCode == Settings.Binds.NoclipToggle then
-        MovementState.noclipOn = not MovementState.noclipOn
-        showBindToggleToast("Noclip", MovementState.noclipOn)
-    end
-    if input.KeyCode == Settings.Binds.FlyToggle then
-        MovementState.flyOn = not MovementState.flyOn
-        showBindToggleToast("Fly", MovementState.flyOn)
-    end
-    if input.KeyCode == Settings.Binds.EspToggle then
-        ESPState.enabled = not ESPState.enabled
-        showBindToggleToast("ESP", ESPState.enabled)
-    end
-    if input.KeyCode == Settings.Binds.TriggerbotToggle then
-        AimState.triggerbotOn = not AimState.triggerbotOn
-        showBindToggleToast("Triggerbot", AimState.triggerbotOn)
     end
 end)
 
