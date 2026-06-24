@@ -1495,7 +1495,7 @@ if autoLoadName and Settings.Misc.AutoLoadConfig then
     loadConfig(autoLoadName)
 end
 
-local AimPage = Window:Page({Name = "Aim", Icon = "138827881557940"})
+local AimPage = Window:Page({Name = "Aim", Icon = "122669828593160"})
 local AimMainSection = AimPage:Section({Name = "Main", Side = 1})
 
 AimMainSection:Toggle({
@@ -1764,7 +1764,7 @@ AimExtraSection:Label("Crosshair Color"):Colorpicker({
     end
 })
 
-local VisualPage = Window:Page({Name = "Visual", Icon = "122669828593160"})
+local VisualPage = Window:Page({Name = "Visual", Icon = "138827881557940"})
 local ESPSection = VisualPage:Section({Name = "Main", Side = 1})
 
 ESPSection:Toggle({
@@ -1906,7 +1906,7 @@ VisualExtraSection:Toggle({
     end
 })
 
-local MovementPage = Window:Page({Name = "Movement", Icon = "138827881557940"})
+local MovementPage = Window:Page({Name = "Movement", Icon = "100050851789190"})
 local MoveSection = MovementPage:Section({Name = "Main", Side = 1})
 
 MoveSection:Toggle({
@@ -2047,7 +2047,7 @@ MoveSection:Slider({
     end
 })
 
-local PlayersPage = Window:Page({Name = "Players", Icon = "138827881557940"})
+local PlayersPage = Window:Page({Name = "Players", Icon = "101500482366184"})
 local PlayersSection = PlayersPage:Section({Name = "Main", Side = 1})
 
 local playerList = {}
@@ -2204,7 +2204,7 @@ Players.PlayerRemoving:Connect(function()
     updatePlayerList()
 end)
 
-local TrollPage = Window:Page({Name = "Troll", Icon = "138827881557940"})
+local TrollPage = Window:Page({Name = "Troll", Icon = "130510492706892"})
 local TrollSection = TrollPage:Section({Name = "Main", Side = 1})
 
 TrollSection:Slider({
@@ -2310,7 +2310,7 @@ TrollSection:Toggle({
     end
 })
 
-local MiscPage = Window:Page({Name = "Misc", Icon = "138827881557940"})
+local MiscPage = Window:Page({Name = "Misc", Icon = "101636617799068"})
 local MiscSection = MiscPage:Section({Name = "Misc", Side = 1})
 
 MiscSection:Toggle({
