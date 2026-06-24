@@ -1,4 +1,13 @@
-local Library = loadstring(game:HttpGet("https://raw.githubusercontent.com/ImInsane-1337/neverlose-ui/refs/heads/main/source/library.lua"))()
+local Library = nil
+local success, err = pcall(function()
+    Library = loadstring(game:HttpGet("https://raw.githubusercontent.com/ImInsane-1337/neverlose-ui/refs/heads/main/source/library.lua"))()
+end)
+
+if not success or not Library then
+    warn("[Monarch] Failed to load Neverlose UI library: " .. tostring(err))
+    warn("[Monarch] Please check your internet connection or the library URL")
+    return
+end
 
 local UserInputService = game:GetService("UserInputService")
 local TweenService = game:GetService("TweenService")
