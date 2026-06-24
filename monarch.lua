@@ -271,6 +271,7 @@ local MiscState = {
     antiAFK = false,
     fpsCounter = true,
     atmosphericFog = false,
+    atmosphericFogColor = Color3.fromRGB(185, 195, 210),
     rain = false,
     floatingLamps = false,
 }
@@ -319,13 +320,13 @@ local function enableAtmosphericFog()
     end
     atmosphericFogInstance = Instance.new("Atmosphere", Lighting)
     atmosphericFogInstance.Name = "PortalAura"
-    atmosphericFogInstance.Color = Color3.fromRGB(185, 195, 210)
-    atmosphericFogInstance.Decay = Color3.fromRGB(170, 175, 185)
+    atmosphericFogInstance.Color = MiscState.atmosphericFogColor
+    atmosphericFogInstance.Decay = MiscState.atmosphericFogColor
     atmosphericFogInstance.Density = 0.42
     atmosphericFogInstance.Haze = 3.5
     atmosphericFogInstance.Glare = 0.5
     atmosphericFogInstance.Offset = 0
-    Lighting.FogColor = Color3.fromRGB(185, 195, 210)
+    Lighting.FogColor = MiscState.atmosphericFogColor
     Lighting.FogStart = 50
     Lighting.FogEnd = 900
 end
@@ -2324,6 +2325,18 @@ VisualExtraSection:Toggle({
             enableAtmosphericFog()
         else
             disableAtmosphericFog()
+        end
+    end
+}):Colorpicker({
+    Name = "Fog Color",
+    Flag = "AtmosphericFogColor",
+    Default = Color3.fromRGB(185, 195, 210),
+    Callback = function(Value)
+        MiscState.atmosphericFogColor = Value
+        if MiscState.atmosphericFog and atmosphericFogInstance then
+            atmosphericFogInstance.Color = Value
+            atmosphericFogInstance.Decay = Value
+            Lighting.FogColor = Value
         end
     end
 })
