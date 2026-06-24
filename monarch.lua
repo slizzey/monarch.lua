@@ -1614,10 +1614,6 @@ ESPSection:Toggle({
     Callback = function(Value)
         ESPState.chamsEnabled = Value
         refreshChams()
-        if chamsFillColorPicker then chamsFillColorPicker:SetVisible(Value) end
-        if chamsOutlineColorPicker then chamsOutlineColorPicker:SetVisible(Value) end
-        if chamsFillTransparencySlider then chamsFillTransparencySlider:SetVisible(Value) end
-        if chamsOutlineTransparencySlider then chamsOutlineTransparencySlider:SetVisible(Value) end
     end
 })
 
@@ -1676,7 +1672,7 @@ ESPSection:Label("ESP Color"):Colorpicker({
     end
 })
 
-local chamsFillColorPicker = ESPSection:Label("Chams Fill Color"):Colorpicker({
+ESPSection:Label("Chams Fill Color"):Colorpicker({
     Name = "Chams Fill Color",
     Flag = "ChamsFillColor",
     Default = Color3.fromRGB(100, 60, 180),
@@ -1685,9 +1681,8 @@ local chamsFillColorPicker = ESPSection:Label("Chams Fill Color"):Colorpicker({
         refreshChams()
     end
 })
-chamsFillColorPicker:SetVisible(false)
 
-local chamsOutlineColorPicker = ESPSection:Label("Chams Outline Color"):Colorpicker({
+ESPSection:Label("Chams Outline Color"):Colorpicker({
     Name = "Chams Outline Color",
     Flag = "ChamsOutlineColor",
     Default = Color3.fromRGB(100, 60, 180),
@@ -1696,9 +1691,8 @@ local chamsOutlineColorPicker = ESPSection:Label("Chams Outline Color"):Colorpic
         refreshChams()
     end
 })
-chamsOutlineColorPicker:SetVisible(false)
 
-local chamsFillTransparencySlider = ESPSection:Slider({
+ESPSection:Slider({
     Name = "Chams Fill Transparency",
     Flag = "ChamsFillTransparency",
     Min = 0,
@@ -1711,9 +1705,8 @@ local chamsFillTransparencySlider = ESPSection:Slider({
         refreshChams()
     end
 })
-chamsFillTransparencySlider:SetVisible(false)
 
-local chamsOutlineTransparencySlider = ESPSection:Slider({
+ESPSection:Slider({
     Name = "Chams Outline Transparency",
     Flag = "ChamsOutlineTransparency",
     Min = 0,
@@ -1726,7 +1719,6 @@ local chamsOutlineTransparencySlider = ESPSection:Slider({
         refreshChams()
     end
 })
-chamsOutlineTransparencySlider:SetVisible(false)
 
 local VisualExtraSection = VisualPage:Section({Name = "Visuals", Side = 2})
 
