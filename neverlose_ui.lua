@@ -5147,12 +5147,16 @@ local Library do
                         end)
 
                         SettingsItem["Settings"].Instance.Visible = true
-                        SettingsItem["Settings"].Instance.Parent = Library.Holder.Instance
+                        SettingsItem["Settings"].Instance.Parent = Toggle.Window.Instance.Parent
                         
                         RenderStepped = RunService.RenderStepped:Connect(function()
+                            local windowGui = Toggle.Window.Instance
+                            local windowPos = windowGui.AbsolutePosition
+                            local windowSize = windowGui.AbsoluteSize
+                            local parentPos = Toggle.Window.Instance.Parent.AbsolutePosition
                             SettingsItem["Settings"].Instance.Position = UDim2New(
-                                0, Items["Toggle"].Instance.AbsolutePosition.X + Items["Toggle"].Instance.AbsoluteSize.X / 1.9 + 15, 
-                                0, Items["Toggle"].Instance.AbsolutePosition.Y + Items["Toggle"].Instance.AbsoluteSize.Y + Size / 1.9)
+                                0, (windowPos.X - parentPos.X) + windowSize.X + 10,
+                                0, (windowPos.Y - parentPos.Y) + 10)
                             SettingsItem["Settings"].Instance.Size = UDim2New(0, 245, 0, Size)
                         end)
     
