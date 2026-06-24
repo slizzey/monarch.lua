@@ -3683,7 +3683,8 @@ local Library do
                     Position = UDim2New(0, 16, 0.5, 0),
                     ZIndex = 2,
                     BorderSizePixel = 0,
-                    BackgroundColor3 = FromRGB(255, 255, 255)
+                    BackgroundColor3 = FromRGB(255, 255, 255),
+                    Visible = false
                 })  --Items["Icon"]:AddToTheme({ImageColor3 = "Accent"})
 
                 Instances:Create("UIGradient", {
@@ -3705,7 +3706,7 @@ local Library do
                     AnchorPoint = Vector2New(0, 0.5),
                     Size = UDim2New(0, 0, 0, 15),
                     BackgroundTransparency = 1,
-                    Position = UDim2New(0, 45, 0.5, 0),
+                    Position = UDim2New(0, 16, 0.5, 0),
                     BorderSizePixel = 0,
                     ZIndex = 2,
                     TextSize = 14,
