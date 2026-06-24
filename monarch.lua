@@ -1703,7 +1703,7 @@ local FogToggle = VisualExtraSection:Toggle({
     end
 })
 
-local FogSettings = FogToggle:Settings(60)
+local FogSettings = FogToggle:Settings(80)
 FogSettings:Label("Fog Color"):Colorpicker({
     Name = "Fog Color",
     Flag = "AtmosphericFogColor",
@@ -2135,27 +2135,26 @@ end
 
 updatePlayerList()
 
-PlayersSection:Dropdown({
-    Name = "Select Target",
-    Flag = "TargetPlayer",
-    Default = {},
-    Items = playerList,
-    Multi = false,
-    Callback = function(Value)
-        if Value and #Value > 0 then
-            selectedPlayerName = Value[1]
+PlayersSection:Label("Players:")
+
+for _, playerName in ipairs(playerList) do
+    PlayersSection:Button({
+        Name = playerName,
+        Callback = function()
+            selectedPlayerName = playerName
             for _, plr in ipairs(Players:GetPlayers()) do
-                if plr.Name == selectedPlayerName then
+                if plr.Name == playerName then
                     trollTarget = plr
                     break
                 end
             end
+            notify("Monarch", "Selected: " .. playerName, 2)
         end
-    end
-})
+    })
+end
 
 PlayersSection:Button({
-    Name = "Refresh Player List",
+    Name = "Refresh",
     Callback = function()
         updatePlayerList()
         notify("Monarch", "Player list refreshed", 2)
