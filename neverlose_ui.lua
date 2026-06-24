@@ -5221,15 +5221,33 @@ local Library do
                     end
                 end)
 
-                Library:Connect(UserInputService.InputBegan, function(Input)
-                    if Input.UserInputType == Enum.UserInputType.MouseButton1 or Input.UserInputType == Enum.UserInputType.Touch then 
-                        if Library:IsMouseOverFrame(SettingsItem["Settings"]) then
-                            return 
-                        end
+                -- Create modal overlay
+                local ModalOverlay = Instances:Create("TextButton", {
+                    Parent = Library.Holder.Instance,
+                    Name = "ModalOverlay",
+                    Size = UDim2New(1, 0, 1, 0),
+                    Position = UDim2New(0, 0, 0, 0),
+                    BackgroundColor3 = FromRGB(0, 0, 0),
+                    BackgroundTransparency = 0.5,
+                    Text = "",
+                    Visible = false,
+                    ZIndex = 6,
+                    Active = true,
+                    Modal = true
+                })
 
-                        Settings:SetOpen(false)
+                SettingsItem["ModalOverlay"] = ModalOverlay
+
+                -- Update SetOpen to handle modal overlay
+                local OriginalSetOpen = Settings.SetOpen
+                Settings.SetOpen = function(self, Bool)
+                    OriginalSetOpen(self, Bool)
+                    if Bool then
+                        ModalOverlay.Visible = true
+                    else
+                        ModalOverlay.Visible = false
                     end
-                end)
+                end
 
                 Settings.Items = SettingsItem
 
