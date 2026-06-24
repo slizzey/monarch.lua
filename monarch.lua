@@ -2611,26 +2611,7 @@ VisualExtraSection:Label("Fog Color"):Colorpicker({
     end
 })
 
-local skyPresetNames = {}
-for _, preset in ipairs(skyPresets) do
-    table.insert(skyPresetNames, preset.Name)
-end
-
-VisualExtraSection:Dropdown({
-    Name = "Skybox Preset",
-    Flag = "SkyboxPreset",
-    Default = {"Default"},
-    Items = skyPresetNames,
-    Multi = false,
-    Callback = function(Value)
-        if Value and #Value > 0 then
-            MiscState.currentSkyPreset = Value[1]
-            applySkyPreset(MiscState.currentSkyPreset)
-        end
-    end
-})
-
-VisualExtraSection:Toggle({
+local BloomToggle = VisualExtraSection:Toggle({
     Name = "Bloom",
     Flag = "BloomEnabled",
     Default = false,
@@ -2640,8 +2621,9 @@ VisualExtraSection:Toggle({
     end
 })
 
-VisualExtraSection:Slider({
-    Name = "Bloom Intensity",
+local BloomSettings = BloomToggle:Settings(150)
+BloomSettings:Slider({
+    Name = "Intensity",
     Flag = "BloomIntensity",
     Min = 0,
     Max = 3,
@@ -2655,8 +2637,8 @@ VisualExtraSection:Slider({
     end
 })
 
-VisualExtraSection:Slider({
-    Name = "Bloom Size",
+BloomSettings:Slider({
+    Name = "Size",
     Flag = "BloomSize",
     Min = 0,
     Max = 100,
@@ -2669,8 +2651,8 @@ VisualExtraSection:Slider({
     end
 })
 
-VisualExtraSection:Slider({
-    Name = "Bloom Threshold",
+BloomSettings:Slider({
+    Name = "Threshold",
     Flag = "BloomThreshold",
     Min = 0,
     Max = 2,
@@ -2684,7 +2666,7 @@ VisualExtraSection:Slider({
     end
 })
 
-VisualExtraSection:Toggle({
+local ColorCorrectionToggle = VisualExtraSection:Toggle({
     Name = "Color Correction",
     Flag = "ColorCorrectionEnabled",
     Default = false,
@@ -2694,7 +2676,8 @@ VisualExtraSection:Toggle({
     end
 })
 
-VisualExtraSection:Slider({
+local ColorCorrectionSettings = ColorCorrectionToggle:Settings(150)
+ColorCorrectionSettings:Slider({
     Name = "Contrast",
     Flag = "ColorContrast",
     Min = -1,
@@ -2709,7 +2692,7 @@ VisualExtraSection:Slider({
     end
 })
 
-VisualExtraSection:Slider({
+ColorCorrectionSettings:Slider({
     Name = "Saturation",
     Flag = "ColorSaturation",
     Min = -1,
@@ -2724,7 +2707,7 @@ VisualExtraSection:Slider({
     end
 })
 
-VisualExtraSection:Label("Tint Color"):Colorpicker({
+ColorCorrectionSettings:Label("Tint Color"):Colorpicker({
     Name = "Tint Color",
     Flag = "ColorTint",
     Default = Color3.fromRGB(255, 255, 255),
@@ -2734,7 +2717,7 @@ VisualExtraSection:Label("Tint Color"):Colorpicker({
     end
 })
 
-VisualExtraSection:Toggle({
+local SunRaysToggle = VisualExtraSection:Toggle({
     Name = "Sun Rays",
     Flag = "SunRaysEnabled",
     Default = false,
@@ -2744,8 +2727,9 @@ VisualExtraSection:Toggle({
     end
 })
 
-VisualExtraSection:Slider({
-    Name = "Sun Rays Intensity",
+local SunRaysSettings = SunRaysToggle:Settings(100)
+SunRaysSettings:Slider({
+    Name = "Intensity",
     Flag = "SunRaysIntensity",
     Min = 0,
     Max = 2,
@@ -2759,8 +2743,8 @@ VisualExtraSection:Slider({
     end
 })
 
-VisualExtraSection:Slider({
-    Name = "Sun Rays Spread",
+SunRaysSettings:Slider({
+    Name = "Spread",
     Flag = "SunRaysSpread",
     Min = 0,
     Max = 1,
@@ -2774,7 +2758,7 @@ VisualExtraSection:Slider({
     end
 })
 
-VisualExtraSection:Toggle({
+local DOFToggle = VisualExtraSection:Toggle({
     Name = "Depth of Field",
     Flag = "DOFEnabled",
     Default = false,
@@ -2784,8 +2768,9 @@ VisualExtraSection:Toggle({
     end
 })
 
-VisualExtraSection:Slider({
-    Name = "DOF Far Intensity",
+local DOFSettings = DOFToggle:Settings(200)
+DOFSettings:Slider({
+    Name = "Far Intensity",
     Flag = "DOFFarIntensity",
     Min = 0,
     Max = 1,
@@ -2799,8 +2784,8 @@ VisualExtraSection:Slider({
     end
 })
 
-VisualExtraSection:Slider({
-    Name = "DOF Focus Distance",
+DOFSettings:Slider({
+    Name = "Focus Distance",
     Flag = "DOFFocusDistance",
     Min = 0,
     Max = 100,
@@ -2813,8 +2798,8 @@ VisualExtraSection:Slider({
     end
 })
 
-VisualExtraSection:Slider({
-    Name = "DOF In Focus Radius",
+DOFSettings:Slider({
+    Name = "In Focus Radius",
     Flag = "DOFInFocusRadius",
     Min = 0,
     Max = 100,
@@ -2827,8 +2812,8 @@ VisualExtraSection:Slider({
     end
 })
 
-VisualExtraSection:Slider({
-    Name = "DOF Near Intensity",
+DOFSettings:Slider({
+    Name = "Near Intensity",
     Flag = "DOFNearIntensity",
     Min = 0,
     Max = 1,
