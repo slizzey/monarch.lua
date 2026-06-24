@@ -118,9 +118,6 @@ local Settings = {
         ChamsEnabled = false,
         TeamVisible = false,
         Color = Color3.fromRGB(100, 60, 180),
-        TeamColorEnabled = false,
-        EnemyColor = Color3.fromRGB(100, 60, 180),
-        TeamColor = Color3.fromRGB(80, 160, 255),
         BoxESP = false,
         NameESP = false,
         Tracers = false,
@@ -259,9 +256,6 @@ local ESPState = {
     showTracers = true,
     showSkeleton = false,
     showTeam = false,
-    teamColorEnabled = false,
-    enemyColor = Color3.fromRGB(100, 60, 180),
-    teamColor = Color3.fromRGB(80, 160, 255),
     espColor = Color3.fromRGB(100, 60, 180),
     chamsEnabled = false,
 }
@@ -988,18 +982,8 @@ local function refreshChams()
     for plr, highlight in pairs(ESPState.highlights) do
         if highlight and highlight.Parent then
             highlight.Enabled = ESPState.chamsEnabled and ESPState.enabled
-            if ESPState.teamColorEnabled then
-                if isOnTeam(plr) then
-                    highlight.FillColor = ESPState.teamColor
-                    highlight.OutlineColor = ESPState.teamColor
-                else
-                    highlight.FillColor = ESPState.enemyColor
-                    highlight.OutlineColor = ESPState.enemyColor
-                end
-            else
-                highlight.FillColor = ESPState.espColor
-                highlight.OutlineColor = ESPState.espColor
-            end
+            highlight.FillColor = ESPState.espColor
+            highlight.OutlineColor = ESPState.espColor
         end
     end
     -- Re-create charms for players who don't have them but should
@@ -1162,9 +1146,6 @@ RunService.RenderStepped:Connect(function()
                     local height = math.abs(headPos.Y - legPos.Y)
                     local width = height * 0.45
                     local color = ESPState.espColor
-                    if ESPState.teamColorEnabled then
-                        color = isOnTeam(plr) and ESPState.teamColor or ESPState.enemyColor
-                    end
                     data.box.Color = color
                     data.tracer.Color = color
                     if ESPState.showBoxes then
@@ -1666,36 +1647,6 @@ ESPSection:Label("ESP Color"):Colorpicker({
     Default = Color3.fromRGB(100, 60, 180),
     Callback = function(Value)
         ESPState.espColor = Value
-        refreshChams()
-    end
-})
-
-ESPSection:Toggle({
-    Name = "Team Color ESP",
-    Flag = "TeamColorESP",
-    Default = false,
-    Callback = function(Value)
-        ESPState.teamColorEnabled = Value
-        refreshChams()
-    end
-})
-
-ESPSection:Label("Enemy Color"):Colorpicker({
-    Name = "Enemy Color",
-    Flag = "EnemyColor",
-    Default = Color3.fromRGB(100, 60, 180),
-    Callback = function(Value)
-        ESPState.enemyColor = Value
-        refreshChams()
-    end
-})
-
-ESPSection:Label("Team Color"):Colorpicker({
-    Name = "Team Color",
-    Flag = "TeamColor",
-    Default = Color3.fromRGB(80, 160, 255),
-    Callback = function(Value)
-        ESPState.teamColor = Value
         refreshChams()
     end
 })
