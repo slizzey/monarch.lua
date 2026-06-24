@@ -1020,11 +1020,6 @@ end
 Players.PlayerAdded:Connect(createESP)
 Players.PlayerRemoving:Connect(removeESP)
 
--- Fix character appearance on startup
-if LocalPlayer.Character then
-    fixCharacterAppearance()
-end
-
 RunService.Heartbeat:Connect(function()
     local hum = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid")
     if hum then
