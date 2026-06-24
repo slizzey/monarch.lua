@@ -5058,7 +5058,8 @@ local Library do
                         AnchorPoint = Vector2New(0, 1),
                         Position = UDim2New(0, 8, 1, -8),
                         TextSize = 14,
-                        BackgroundColor3 = FromRGB(27, 26, 29)
+                        BackgroundColor3 = FromRGB(27, 26, 29),
+                        Visible = false
                     })  SettingsItem["Button"]:AddToTheme({BackgroundColor3 = "Element"})
     
                     SettingsItem["Accent"] = Instances:Create("Frame", {
