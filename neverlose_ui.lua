@@ -5147,16 +5147,12 @@ local Library do
                         end)
 
                         SettingsItem["Settings"].Instance.Visible = true
-                        SettingsItem["Settings"].Instance.Parent = Library.Holder.Instance.Parent
+                        SettingsItem["Settings"].Instance.Parent = Toggle.Window.Instance
                         
-                        RenderStepped = RunService.RenderStepped:Connect(function()
-                            local windowPos = Toggle.Window.Instance.AbsolutePosition
-                            local windowSize = Toggle.Window.Instance.AbsoluteSize
-                            SettingsItem["Settings"].Instance.Position = UDim2New(
-                                0, windowPos.X + windowSize.X + 10,
-                                0, windowPos.Y + 10)
-                            SettingsItem["Settings"].Instance.Size = UDim2New(0, 245, 0, Size)
-                        end)
+                        SettingsItem["Settings"].Instance.Position = UDim2New(
+                            1, 10,
+                            0, 10)
+                        SettingsItem["Settings"].Instance.Size = UDim2New(0, 245, 0, Size)
     
                         for Index, Value in Library.OpenFrames do 
                             if Value ~= Settings then 
