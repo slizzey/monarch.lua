@@ -258,6 +258,10 @@ local ESPState = {
     showTeam = false,
     espColor = Color3.fromRGB(100, 60, 180),
     chamsEnabled = false,
+    chamsFillColor = Color3.fromRGB(100, 60, 180),
+    chamsOutlineColor = Color3.fromRGB(100, 60, 180),
+    chamsFillTransparency = 0.5,
+    chamsOutlineTransparency = 0,
 }
 
 local MiscState = {
@@ -937,10 +941,10 @@ local function createESP(plr)
     if ESPState.chamsEnabled and plr.Character then
         local highlight = Instance.new("Highlight")
         highlight.Name = "Monarch_Charm"
-        highlight.FillColor = ESPState.espColor
-        highlight.OutlineColor = ESPState.espColor
-        highlight.FillTransparency = 0.5
-        highlight.OutlineTransparency = 0
+        highlight.FillColor = ESPState.chamsFillColor
+        highlight.OutlineColor = ESPState.chamsOutlineColor
+        highlight.FillTransparency = ESPState.chamsFillTransparency
+        highlight.OutlineTransparency = ESPState.chamsOutlineTransparency
         highlight.Enabled = true
         highlight.Adornee = plr.Character
         highlight.Parent = plr.Character
@@ -982,8 +986,10 @@ local function refreshChams()
     for plr, highlight in pairs(ESPState.highlights) do
         if highlight and highlight.Parent then
             highlight.Enabled = ESPState.chamsEnabled and ESPState.enabled
-            highlight.FillColor = ESPState.espColor
-            highlight.OutlineColor = ESPState.espColor
+            highlight.FillColor = ESPState.chamsFillColor
+            highlight.OutlineColor = ESPState.chamsOutlineColor
+            highlight.FillTransparency = ESPState.chamsFillTransparency
+            highlight.OutlineTransparency = ESPState.chamsOutlineTransparency
         end
     end
     -- Re-create charms for players who don't have them but should
@@ -993,10 +999,10 @@ local function refreshChams()
                 if plr.Character then
                     local highlight = Instance.new("Highlight")
                     highlight.Name = "Monarch_Charm"
-                    highlight.FillColor = ESPState.espColor
-                    highlight.OutlineColor = ESPState.espColor
-                    highlight.FillTransparency = 0.5
-                    highlight.OutlineTransparency = 0
+                    highlight.FillColor = ESPState.chamsFillColor
+                    highlight.OutlineColor = ESPState.chamsOutlineColor
+                    highlight.FillTransparency = ESPState.chamsFillTransparency
+                    highlight.OutlineTransparency = ESPState.chamsOutlineTransparency
                     highlight.Enabled = true
                     highlight.Adornee = plr.Character
                     highlight.Parent = plr.Character
@@ -1647,6 +1653,52 @@ ESPSection:Label("ESP Color"):Colorpicker({
     Default = Color3.fromRGB(100, 60, 180),
     Callback = function(Value)
         ESPState.espColor = Value
+        refreshChams()
+    end
+})
+
+ESPSection:Label("Chams Fill Color"):Colorpicker({
+    Name = "Chams Fill Color",
+    Flag = "ChamsFillColor",
+    Default = Color3.fromRGB(100, 60, 180),
+    Callback = function(Value)
+        ESPState.chamsFillColor = Value
+        refreshChams()
+    end
+})
+
+ESPSection:Label("Chams Outline Color"):Colorpicker({
+    Name = "Chams Outline Color",
+    Flag = "ChamsOutlineColor",
+    Default = Color3.fromRGB(100, 60, 180),
+    Callback = function(Value)
+        ESPState.chamsOutlineColor = Value
+        refreshChams()
+    end
+})
+
+ESPSection:Slider({
+    Name = "Chams Fill Transparency",
+    Flag = "ChamsFillTransparency",
+    Min = 0,
+    Max = 1,
+    Default = 0.5,
+    Suffix = "",
+    Callback = function(Value)
+        ESPState.chamsFillTransparency = Value
+        refreshChams()
+    end
+})
+
+ESPSection:Slider({
+    Name = "Chams Outline Transparency",
+    Flag = "ChamsOutlineTransparency",
+    Min = 0,
+    Max = 1,
+    Default = 0,
+    Suffix = "",
+    Callback = function(Value)
+        ESPState.chamsOutlineTransparency = Value
         refreshChams()
     end
 })
