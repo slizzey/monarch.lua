@@ -273,10 +273,24 @@ local MiscState = {
     atmosphericFogColor = Color3.fromRGB(185, 195, 210),
     rain = false,
     floatingLamps = false,
+    rtxEnabled = false,
     currentSkyPreset = "Default",
+    bloomEnabled = false,
+    bloomIntensity = 0.8,
+    bloomSize = 20,
+    bloomThreshold = 0.8,
+    colorCorrectionEnabled = false,
+    colorContrast = 0.15,
+    colorSaturation = 0.2,
+    colorTint = Color3.fromRGB(255, 255, 255),
     sunRaysEnabled = false,
     sunRaysIntensity = 0.2,
     sunRaysSpread = 0.75,
+    dofEnabled = false,
+    dofFarIntensity = 0.15,
+    dofFocusDistance = 35,
+    dofInFocusRadius = 25,
+    dofNearIntensity = 0,
     forceLighting = false,
 }
 
@@ -846,7 +860,10 @@ end
 
 -- RTX / Post-Processing Effects
 local rtxEffects = {
+    bloom = nil,
+    colorCorrection = nil,
     sunRays = nil,
+    dof = nil,
     sky = nil
 }
 local lightingForceConn = nil
@@ -856,8 +873,8 @@ local skyPresets = {
         Name = "Default",
         Time = 12,
         Exposure = 0,
-        Ambient = nil,
-        OutdoorAmbient = nil,
+        Ambient = Color3.fromRGB(128, 128, 128),
+        OutdoorAmbient = Color3.fromRGB(128, 128, 128),
         Skybox = nil
     },
     {
@@ -925,12 +942,6 @@ local function applySkyPreset(presetName)
     end
     if not preset then return end
 
-    -- Disable Fullbright if it's on, as it conflicts with skybox lighting
-    if MiscState.fullbright then
-        MiscState.fullbright = false
-        updateLightingState()
-    end
-
     local sky = Lighting:FindFirstChildOfClass("Sky")
 
     if preset.Skybox then
@@ -944,6 +955,8 @@ local function applySkyPreset(presetName)
         sky.SkyboxLf = preset.Skybox.Lf
         sky.SkyboxRt = preset.Skybox.Rt
         sky.SkyboxUp = preset.Skybox.Up
+        sky.SunAngularSize = 15
+        sky.MoonAngularSize = 10
         rtxEffects.sky = sky
     else
         if sky then sky:Destroy() end
@@ -951,42 +964,61 @@ local function applySkyPreset(presetName)
     end
 
     Lighting.ClockTime = preset.Time
-    Lighting.TimeOfDay = tostring(preset.Time) .. ":00:00"
     Lighting.ExposureCompensation = preset.Exposure
-    if preset.Ambient then Lighting.Ambient = preset.Ambient end
-    if preset.OutdoorAmbient then Lighting.OutdoorAmbient = preset.OutdoorAmbient end
+    Lighting.Ambient = preset.Ambient
+    Lighting.OutdoorAmbient = preset.OutdoorAmbient
     Lighting.GlobalShadows = true
     Lighting.Brightness = 2
+end
 
-    local isDay = preset.Name:find("Daylight")
+local function enableBloom()
+    if rtxEffects.bloom then return end
+    rtxEffects.bloom = Instance.new("BloomEffect")
+    rtxEffects.bloom.Name = "Monarch_Bloom"
+    rtxEffects.bloom.Intensity = MiscState.bloomIntensity
+    rtxEffects.bloom.Size = MiscState.bloomSize
+    rtxEffects.bloom.Threshold = MiscState.bloomThreshold
+    rtxEffects.bloom.Parent = Lighting
+end
 
-    local bloom = Lighting:FindFirstChild("RoShade_Bloom") or Instance.new("BloomEffect")
-    bloom.Name = "RoShade_Bloom"
-    bloom.Intensity = isDay and 0.5 or 1.3
-    bloom.Size = isDay and 15 or 26
-    bloom.Threshold = 0.8
-    bloom.Parent = Lighting
+local function updateBloom()
+    if rtxEffects.bloom then
+        rtxEffects.bloom.Intensity = MiscState.bloomIntensity
+        rtxEffects.bloom.Size = MiscState.bloomSize
+        rtxEffects.bloom.Threshold = MiscState.bloomThreshold
+    end
+end
 
-    local cc = Lighting:FindFirstChild("RoShade_CC") or Instance.new("ColorCorrectionEffect")
-    cc.Name = "RoShade_CC"
-    cc.Contrast = isDay and 0.12 or 0.22
-    cc.Saturation = isDay and 0.15 or 0.25
-    cc.TintColor = Color3.fromRGB(255, 255, 255)
-    cc.Parent = Lighting
+local function disableBloom()
+    if rtxEffects.bloom then
+        rtxEffects.bloom:Destroy()
+        rtxEffects.bloom = nil
+    end
+end
 
-    local sunRays = Lighting:FindFirstChild("RoShade_SunRays") or Instance.new("SunRaysEffect")
-    sunRays.Name = "RoShade_SunRays"
-    sunRays.Intensity = isDay and 0.1 or 0.25
-    sunRays.Spread = 0.75
-    sunRays.Parent = Lighting
+local function enableColorCorrection()
+    if rtxEffects.colorCorrection then return end
+    rtxEffects.colorCorrection = Instance.new("ColorCorrectionEffect")
+    rtxEffects.colorCorrection.Name = "Monarch_ColorCorrection"
+    rtxEffects.colorCorrection.Contrast = MiscState.colorContrast
+    rtxEffects.colorCorrection.Saturation = MiscState.colorSaturation
+    rtxEffects.colorCorrection.TintColor = MiscState.colorTint
+    rtxEffects.colorCorrection.Parent = Lighting
+end
 
-    local dof = Lighting:FindFirstChild("RoShade_DOF") or Instance.new("DepthOfFieldEffect")
-    dof.Name = "RoShade_DOF"
-    dof.FarIntensity = 0.15
-    dof.FocusDistance = 35
-    dof.InFocusRadius = 25
-    dof.NearIntensity = 0
-    dof.Parent = Lighting
+local function updateColorCorrection()
+    if rtxEffects.colorCorrection then
+        rtxEffects.colorCorrection.Contrast = MiscState.colorContrast
+        rtxEffects.colorCorrection.Saturation = MiscState.colorSaturation
+        rtxEffects.colorCorrection.TintColor = MiscState.colorTint
+    end
+end
+
+local function disableColorCorrection()
+    if rtxEffects.colorCorrection then
+        rtxEffects.colorCorrection:Destroy()
+        rtxEffects.colorCorrection = nil
+    end
 end
 
 local function enableSunRays()
@@ -1009,6 +1041,33 @@ local function disableSunRays()
     if rtxEffects.sunRays then
         rtxEffects.sunRays:Destroy()
         rtxEffects.sunRays = nil
+    end
+end
+
+local function enableDOF()
+    if rtxEffects.dof then return end
+    rtxEffects.dof = Instance.new("DepthOfFieldEffect")
+    rtxEffects.dof.Name = "Monarch_DOF"
+    rtxEffects.dof.FarIntensity = MiscState.dofFarIntensity
+    rtxEffects.dof.FocusDistance = MiscState.dofFocusDistance
+    rtxEffects.dof.InFocusRadius = MiscState.dofInFocusRadius
+    rtxEffects.dof.NearIntensity = MiscState.dofNearIntensity
+    rtxEffects.dof.Parent = Lighting
+end
+
+local function updateDOF()
+    if rtxEffects.dof then
+        rtxEffects.dof.FarIntensity = MiscState.dofFarIntensity
+        rtxEffects.dof.FocusDistance = MiscState.dofFocusDistance
+        rtxEffects.dof.InFocusRadius = MiscState.dofInFocusRadius
+        rtxEffects.dof.NearIntensity = MiscState.dofNearIntensity
+    end
+end
+
+local function disableDOF()
+    if rtxEffects.dof then
+        rtxEffects.dof:Destroy()
+        rtxEffects.dof = nil
     end
 end
 
@@ -2572,6 +2631,110 @@ VisualExtraSection:Dropdown({
 })
 
 VisualExtraSection:Toggle({
+    Name = "Bloom",
+    Flag = "BloomEnabled",
+    Default = false,
+    Callback = function(Value)
+        MiscState.bloomEnabled = Value
+        if Value then enableBloom() else disableBloom() end
+    end
+})
+
+VisualExtraSection:Slider({
+    Name = "Bloom Intensity",
+    Flag = "BloomIntensity",
+    Min = 0,
+    Max = 3,
+    Default = 0.8,
+    Suffix = "",
+    Step = 0.1,
+    Decimals = 1,
+    Callback = function(Value)
+        MiscState.bloomIntensity = Value
+        updateBloom()
+    end
+})
+
+VisualExtraSection:Slider({
+    Name = "Bloom Size",
+    Flag = "BloomSize",
+    Min = 0,
+    Max = 100,
+    Default = 20,
+    Suffix = "",
+    Step = 1,
+    Callback = function(Value)
+        MiscState.bloomSize = Value
+        updateBloom()
+    end
+})
+
+VisualExtraSection:Slider({
+    Name = "Bloom Threshold",
+    Flag = "BloomThreshold",
+    Min = 0,
+    Max = 2,
+    Default = 0.8,
+    Suffix = "",
+    Step = 0.1,
+    Decimals = 1,
+    Callback = function(Value)
+        MiscState.bloomThreshold = Value
+        updateBloom()
+    end
+})
+
+VisualExtraSection:Toggle({
+    Name = "Color Correction",
+    Flag = "ColorCorrectionEnabled",
+    Default = false,
+    Callback = function(Value)
+        MiscState.colorCorrectionEnabled = Value
+        if Value then enableColorCorrection() else disableColorCorrection() end
+    end
+})
+
+VisualExtraSection:Slider({
+    Name = "Contrast",
+    Flag = "ColorContrast",
+    Min = -1,
+    Max = 1,
+    Default = 0.15,
+    Suffix = "",
+    Step = 0.05,
+    Decimals = 2,
+    Callback = function(Value)
+        MiscState.colorContrast = Value
+        updateColorCorrection()
+    end
+})
+
+VisualExtraSection:Slider({
+    Name = "Saturation",
+    Flag = "ColorSaturation",
+    Min = -1,
+    Max = 1,
+    Default = 0.2,
+    Suffix = "",
+    Step = 0.05,
+    Decimals = 2,
+    Callback = function(Value)
+        MiscState.colorSaturation = Value
+        updateColorCorrection()
+    end
+})
+
+VisualExtraSection:Label("Tint Color"):Colorpicker({
+    Name = "Tint Color",
+    Flag = "ColorTint",
+    Default = Color3.fromRGB(255, 255, 255),
+    Callback = function(Value)
+        MiscState.colorTint = Value
+        updateColorCorrection()
+    end
+})
+
+VisualExtraSection:Toggle({
     Name = "Sun Rays",
     Flag = "SunRaysEnabled",
     Default = false,
@@ -2608,6 +2771,74 @@ VisualExtraSection:Slider({
     Callback = function(Value)
         MiscState.sunRaysSpread = Value
         updateSunRays()
+    end
+})
+
+VisualExtraSection:Toggle({
+    Name = "Depth of Field",
+    Flag = "DOFEnabled",
+    Default = false,
+    Callback = function(Value)
+        MiscState.dofEnabled = Value
+        if Value then enableDOF() else disableDOF() end
+    end
+})
+
+VisualExtraSection:Slider({
+    Name = "DOF Far Intensity",
+    Flag = "DOFFarIntensity",
+    Min = 0,
+    Max = 1,
+    Default = 0.15,
+    Suffix = "",
+    Step = 0.05,
+    Decimals = 2,
+    Callback = function(Value)
+        MiscState.dofFarIntensity = Value
+        updateDOF()
+    end
+})
+
+VisualExtraSection:Slider({
+    Name = "DOF Focus Distance",
+    Flag = "DOFFocusDistance",
+    Min = 0,
+    Max = 100,
+    Default = 35,
+    Suffix = "",
+    Step = 1,
+    Callback = function(Value)
+        MiscState.dofFocusDistance = Value
+        updateDOF()
+    end
+})
+
+VisualExtraSection:Slider({
+    Name = "DOF In Focus Radius",
+    Flag = "DOFInFocusRadius",
+    Min = 0,
+    Max = 100,
+    Default = 25,
+    Suffix = "",
+    Step = 1,
+    Callback = function(Value)
+        MiscState.dofInFocusRadius = Value
+        updateDOF()
+    end
+})
+
+VisualExtraSection:Slider({
+    Name = "DOF Near Intensity",
+    Flag = "DOFNearIntensity",
+    Min = 0,
+    Max = 1,
+    Default = 0,
+    Suffix = "",
+    Step = 0.05,
+    Decimals = 2,
+    Callback = function(Value)
+        MiscState.dofNearIntensity = Value
+        updateDOF()
     end
 })
 
