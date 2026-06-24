@@ -1909,13 +1909,9 @@ LocalPlayer.CharacterAdded:Connect(function(newChar)
     local hum = newChar:WaitForChild("Humanoid")
     if MovementState.speedEnabled then
         hum.WalkSpeed = MovementState.currentSpeed
-    else
-        hum.WalkSpeed = 16
     end
     if MovementState.jumpEnabled then
         hum.JumpPower = MovementState.jumpValue
-    else
-        hum.JumpPower = 50
     end
     if MovementState.shieldOn then
         MovementState.forceField = Instance.new("ForceField")
@@ -2858,7 +2854,7 @@ MoveSection:Toggle({
     end
 })
 
-MoveSection:Toggle({
+local WalkSpeedToggle = MoveSection:Toggle({
     Name = "Walk Speed",
     Flag = "SpeedEnabled",
     Default = false,
@@ -2867,7 +2863,8 @@ MoveSection:Toggle({
     end
 })
 
-MoveSection:Slider({
+local WalkSpeedSettings = WalkSpeedToggle:Settings(80)
+WalkSpeedSettings:Slider({
     Name = "Speed",
     Flag = "SpeedValue",
     Min = 16,
@@ -2879,7 +2876,7 @@ MoveSection:Slider({
     end
 })
 
-MoveSection:Toggle({
+local JumpHeightToggle = MoveSection:Toggle({
     Name = "Jump Height",
     Flag = "JumpEnabled",
     Default = false,
@@ -2888,7 +2885,8 @@ MoveSection:Toggle({
     end
 })
 
-MoveSection:Slider({
+local JumpHeightSettings = JumpHeightToggle:Settings(80)
+JumpHeightSettings:Slider({
     Name = "Height",
     Flag = "JumpValue",
     Min = 7,
@@ -2909,7 +2907,7 @@ MoveSection:Toggle({
     end
 })
 
-MoveSection:Toggle({
+local FlyToggle = MoveSection:Toggle({
     Name = "Fly",
     Flag = "FlyEnabled",
     Default = false,
@@ -2934,7 +2932,8 @@ MoveSection:Toggle({
     end
 })
 
-MoveSection:Slider({
+local FlySettings = FlyToggle:Settings(80)
+FlySettings:Slider({
     Name = "Fly Speed",
     Flag = "FlySpeed",
     Min = 10,
