@@ -5485,6 +5485,7 @@ local Library do
                 Max = Data.Max or Data.max or 100,
                 Suffix = Data.Suffix or Data.suffix or "",
                 Decimals = Data.Decimals or Data.decimals or 1,
+                Step = Data.Step or Data.step or 1,
                 Callback = Data.Callback or Data.callback or function() end,
 
                 Value = 0,
@@ -5674,29 +5675,33 @@ local Library do
             end
 
             function Slider:Set(Value)
-                Slider.Value = Library:Round(MathClamp(Value, Slider.Min, Slider.Max), Slider.Decimals)
+                local clampedValue = MathClamp(Value, Slider.Min, Slider.Max)
+                -- Snap to step increments
+                local steppedValue = MathFloor((clampedValue - Slider.Min) / Slider.Step + 0.5) * Slider.Step + Slider.Min
+                steppedValue = MathClamp(steppedValue, Slider.Min, Slider.Max)
+                Slider.Value = Library:Round(steppedValue, Slider.Decimals)
                 Library.Flags[Slider.Flag] = Slider.Value
 
                 Items["Accent"]:Tween(TweenInfo.new(Library.Tween.Time, Enum.EasingStyle.Quart, Enum.EasingDirection.Out), {Size = UDim2New((Slider.Value - Slider.Min) / (Slider.Max - Slider.Min), 0, 1, 0)})
                 Items["Value"].Instance.Text = StringFormat("%s%s", Slider.Value, Slider.Suffix)
 
-                if Slider.Value >= Slider.Max then 
+                if Slider.Value >= Slider.Max then
                     Items["Icon"].Instance.Position = UDim2New(1, -5, 0.5, 0)
                 else
                     Items["Icon"].Instance.Position = UDim2New(1, 5, 0.5, 0)
                 end
 
-                if Slider.Callback then 
+                if Slider.Callback then
                     Library:SafeCall(Slider.Callback, Slider.Value)
                 end
             end
 
             Items["Plus"]:Connect("MouseButton1Down", function()
-                Slider:Set(Slider.Value + Slider.Decimals)
+                Slider:Set(Slider.Value + Slider.Step)
             end)
 
             Items["Minus"]:Connect("MouseButton1Down", function()
-                Slider:Set(Slider.Value - Slider.Decimals)
+                Slider:Set(Slider.Value - Slider.Step)
             end)
 
             local InputChanged 
