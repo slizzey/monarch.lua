@@ -490,6 +490,25 @@ local function isWhitelisted(plr)
     return false
 end
 
+local AIM_PART_FALLBACKS = {
+    Head = {"Head", "HeadHB", "HitboxHead", "UpperTorso", "Torso", "HumanoidRootPart"},
+    HumanoidRootPart = {"HumanoidRootPart", "Torso", "UpperTorso", "LowerTorso", "Root"},
+    UpperTorso = {"UpperTorso", "Torso", "Chest", "HumanoidRootPart", "Head"},
+}
+
+local function getTargetPart(character)
+    if not character then return nil end
+    local preferred = AimState.targetPart
+    local fallbacks = AIM_PART_FALLBACKS[preferred] or {preferred}
+    for _, name in ipairs(fallbacks) do
+        local part = character:FindFirstChild(name)
+        if part and part:IsA("BasePart") then
+            return part
+        end
+    end
+    return character:FindFirstChildWhichIsA("BasePart", true)
+end
+
 local function lookupGlobalFunction(...)
     for i = 1, select("#", ...) do
         local name = select(i, ...)
@@ -623,7 +642,7 @@ local function getClosestPlayerInFOV()
         if plr ~= LocalPlayer and plr.Character then
             if isWhitelisted(plr) then continue end
             if isOnTeam(plr) then continue end
-            local part = plr.Character:FindFirstChild(AimState.targetPart)
+            local part = getTargetPart(plr.Character)
             if part then
                 if AimState.wallCheck and isWallBetween(Camera, part) then continue end
                 local screenPos, onScreen = Camera:WorldToViewportPoint(part.Position)
@@ -654,14 +673,44 @@ local function lookAt(targetPos)
     end
 end
 
+local AIM_MAX_STEP = 14
+local AIM_PULL_FRACTION = 0.68
+local lastAimErrX = 0
+local lastAimErrY = 0
+
+local function aimAtScreen(screenX, screenY)
+    local viewportSize = Camera.ViewportSize
+    local centerX = viewportSize.X / 2
+    local centerY = viewportSize.Y / 2
+    
+    local errX = screenX - centerX
+    local errY = screenY - centerY
+    
+    local stepX = math.clamp(errX, -AIM_MAX_STEP, AIM_MAX_STEP)
+    local stepY = math.clamp(errY, -AIM_MAX_STEP, AIM_MAX_STEP)
+    
+    stepX = stepX * AIM_PULL_FRACTION
+    stepY = stepY * AIM_PULL_FRACTION
+    
+    if math.abs(stepX) < 0.5 and math.abs(stepY) < 0.5 then
+        return false
+    end
+    
+    mouseMoveRel(stepX, stepY)
+    return true
+end
+
 local function aimAtTarget(target)
     if not target or not target.Character then return end
-    local part = target.Character:FindFirstChild(AimState.targetPart)
+    local part = getTargetPart(target.Character)
     if part then
         local predictedPos = getPredictedPosition(part)
-        lookAt(predictedPos)
-        if AimState.showLockHud then
-            setLockHud("LOCKED: " .. target.Name, true)
+        local screenPos, onScreen = Camera:WorldToViewportPoint(predictedPos)
+        if onScreen then
+            aimAtScreen(screenPos.X, screenPos.Y)
+            if AimState.showLockHud then
+                setLockHud("LOCKED: " .. target.Name, true)
+            end
         end
     end
 end
@@ -838,10 +887,12 @@ local function updateLightingState()
         Lighting.Brightness = 2
         Lighting.Ambient = Color3.new(1, 1, 1)
         Lighting.OutdoorAmbient = Color3.new(1, 1, 1)
+        Lighting.GlobalShadows = false
     else
         Lighting.Brightness = originalLighting.Brightness
         Lighting.Ambient = originalLighting.Ambient
         Lighting.OutdoorAmbient = originalLighting.OutdoorAmbient
+        Lighting.GlobalShadows = true
     end
     if MiscState.noFog then
         Lighting.FogEnd = 100000
@@ -849,6 +900,25 @@ local function updateLightingState()
     else
         Lighting.FogEnd = originalLighting.FogEnd
         Lighting.FogStart = originalLighting.FogStart
+    end
+end
+
+local function fixCharacterAppearance()
+    local char = LocalPlayer.Character
+    if not char then return end
+    
+    -- Ensure proper character quality
+    local hum = char:FindFirstChildOfClass("Humanoid")
+    if hum then
+        hum.DisplayDistanceType = Enum.HumanoidDisplayDistanceType.None
+    end
+    
+    -- Fix lighting on character parts
+    for _, part in ipairs(char:GetDescendants()) do
+        if part:IsA("BasePart") then
+            part.Material = Enum.Material.SmoothPlastic
+            part.Reflectance = 0
+        end
     end
 end
 
@@ -885,13 +955,15 @@ local function createESP(plr)
         name = nameText,
         dist = distText
     }
-    if ESPState.charmsEnabled then
+    -- Create charm (Highlight) immediately if enabled
+    if ESPState.charmsEnabled and plr.Character then
         local highlight = Instance.new("Highlight")
+        highlight.Name = "Monarch_Charm"
         highlight.FillColor = ESPState.espColor
         highlight.OutlineColor = ESPState.espColor
         highlight.FillTransparency = 0.5
         highlight.OutlineTransparency = 0
-        highlight.Enabled = false
+        highlight.Enabled = true
         highlight.Adornee = plr.Character
         highlight.Parent = plr.Character
         ESPState.highlights[plr] = highlight
@@ -930,7 +1002,7 @@ end
 
 local function refreshCharms()
     for plr, highlight in pairs(ESPState.highlights) do
-        if highlight then
+        if highlight and highlight.Parent then
             highlight.Enabled = ESPState.charmsEnabled and ESPState.enabled
             if ESPState.teamColorEnabled then
                 if isOnTeam(plr) then
@@ -946,6 +1018,25 @@ local function refreshCharms()
             end
         end
     end
+    -- Re-create charms for players who don't have them but should
+    for _, plr in ipairs(Players:GetPlayers()) do
+        if plr ~= LocalPlayer and ESPState.charmsEnabled and ESPState.enabled then
+            if not ESPState.highlights[plr] or not ESPState.highlights[plr].Parent then
+                if plr.Character then
+                    local highlight = Instance.new("Highlight")
+                    highlight.Name = "Monarch_Charm"
+                    highlight.FillColor = ESPState.espColor
+                    highlight.OutlineColor = ESPState.espColor
+                    highlight.FillTransparency = 0.5
+                    highlight.OutlineTransparency = 0
+                    highlight.Enabled = true
+                    highlight.Adornee = plr.Character
+                    highlight.Parent = plr.Character
+                    ESPState.highlights[plr] = highlight
+                end
+            end
+        end
+    end
 end
 
 for _, plr in ipairs(Players:GetPlayers()) do
@@ -953,6 +1044,11 @@ for _, plr in ipairs(Players:GetPlayers()) do
 end
 Players.PlayerAdded:Connect(createESP)
 Players.PlayerRemoving:Connect(removeESP)
+
+-- Fix character appearance on startup
+if LocalPlayer.Character then
+    fixCharacterAppearance()
+end
 
 RunService.Heartbeat:Connect(function()
     local hum = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid")
@@ -1035,6 +1131,7 @@ LocalPlayer.CharacterAdded:Connect(function(newChar)
         if MovementState.bodyGyro then MovementState.bodyGyro:Destroy() MovementState.bodyGyro = nil end
     end
     if TrollState.invisible then updateInvisibleState() end
+    fixCharacterAppearance()
 end)
 
 RunService.RenderStepped:Connect(function()
