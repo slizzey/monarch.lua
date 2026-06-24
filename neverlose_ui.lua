@@ -5018,7 +5018,7 @@ local Library do
                         Name = "\0",
                         AutomaticCanvasSize = Enum.AutomaticSize.Y,
                         Selectable = false,
-                        Size = UDim2New(1, -8, 1, -46),
+                        Size = UDim2New(1, -8, 1, -8),
                         Position = UDim2New(0, 4, 0, 4),
                         ScrollBarThickness = 2,
                         BackgroundColor3 = FromRGB(255, 255, 255),
@@ -5053,7 +5053,7 @@ local Library do
                         Text = "",
                         AutoButtonColor = false,
                         BorderSizePixel = 0,
-                        Size = UDim2New(1, -16, 0, 32),
+                        Size = UDim2New(0, 0, 0, 0),
                         ZIndex = 2,
                         AnchorPoint = Vector2New(0, 1),
                         Position = UDim2New(0, 8, 1, -8),
@@ -5113,7 +5113,8 @@ local Library do
                         BorderColor3 = FromRGB(0, 0, 0),
                         ZIndex = 2,
                         TextSize = 14,
-                        BackgroundColor3 = FromRGB(255, 255, 255)
+                        BackgroundColor3 = FromRGB(255, 255, 255),
+                        Visible = false
                     })  SettingsItem["Text"]:AddToTheme({TextColor3 = "Text"})   
 
                     SettingsItem["Button"]:OnHover(function()
