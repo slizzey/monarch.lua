@@ -1497,8 +1497,8 @@ end
 
 Window:Category("Aim")
 
-local AimPage = Window:Page({Name = "", Icon = "138827881557940"})
-local AimMainSection = AimPage:Section({Name = "Aimbot", Side = 1})
+local AimPage = Window:Page({Name = "Aim", Icon = "138827881557940"})
+local AimMainSection = AimPage:Section({Name = "Main", Side = 1})
 
 AimMainSection:Toggle({
     Name = "Enable Aimbot",
@@ -1768,8 +1768,8 @@ AimExtraSection:Label("Crosshair Color"):Colorpicker({
 
 Window:Category("Visual")
 
-local VisualPage = Window:Page({Name = "", Icon = "122669828593160"})
-local ESPSection = VisualPage:Section({Name = "ESP", Side = 1})
+local VisualPage = Window:Page({Name = "Visual", Icon = "122669828593160"})
+local ESPSection = VisualPage:Section({Name = "Main", Side = 1})
 
 ESPSection:Toggle({
     Name = "Enable ESP",
@@ -1892,8 +1892,8 @@ local VisualExtraSection = VisualPage:Section({Name = "Visuals", Side = 2})
 
 Window:Category("Movement")
 
-local MovementPage = Window:Page({Name = "", Icon = "138827881557940"})
-local MoveSection = MovementPage:Section({Name = "Movement", Side = 1})
+local MovementPage = Window:Page({Name = "Movement", Icon = "138827881557940"})
+local MoveSection = MovementPage:Section({Name = "Main", Side = 1})
 
 MoveSection:Toggle({
     Name = "Shield",
@@ -2035,8 +2035,8 @@ MoveSection:Slider({
 
 Window:Category("Players")
 
-local PlayersPage = Window:Page({Name = "", Icon = "138827881557940"})
-local PlayersSection = PlayersPage:Section({Name = "Player Selection", Side = 1})
+local PlayersPage = Window:Page({Name = "Players", Icon = "138827881557940"})
+local PlayersSection = PlayersPage:Section({Name = "Main", Side = 1})
 
 local playerList = {}
 local selectedPlayerName = ""
@@ -2194,8 +2194,8 @@ end)
 
 Window:Category("Troll")
 
-local TrollPage = Window:Page({Name = "", Icon = "138827881557940"})
-local TrollSection = TrollPage:Section({Name = "Troll Features", Side = 1})
+local TrollPage = Window:Page({Name = "Troll", Icon = "138827881557940"})
+local TrollSection = TrollPage:Section({Name = "Main", Side = 1})
 
 TrollSection:Slider({
     Name = "Fling Power",
@@ -2302,7 +2302,7 @@ TrollSection:Toggle({
 
 Window:Category("Misc")
 
-local MiscPage = Window:Page({Name = "", Icon = "138827881557940"})
+local MiscPage = Window:Page({Name = "Misc", Icon = "138827881557940"})
 local MiscSection = MiscPage:Section({Name = "Misc", Side = 1})
 
 MiscSection:Toggle({
@@ -2320,6 +2320,26 @@ MiscSection:Toggle({
     Default = false,
     Callback = function(Value)
         MiscState.antiAFK = Value
+    end
+})
+
+MiscSection:Toggle({
+    Name = "Fullbright",
+    Flag = "Fullbright",
+    Default = false,
+    Callback = function(Value)
+        MiscState.fullbright = Value
+        updateLightingState()
+    end
+})
+
+MiscSection:Toggle({
+    Name = "No Fog",
+    Flag = "NoFog",
+    Default = false,
+    Callback = function(Value)
+        MiscState.noFog = Value
+        updateLightingState()
     end
 })
 
