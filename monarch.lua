@@ -1747,6 +1747,22 @@ VisualExtraSection:Toggle({
     end
 })
 
+VisualExtraSection:Slider({
+    Name = "Time of Day",
+    Flag = "TimeOfDay",
+    Min = 0,
+    Max = 24,
+    Default = 12,
+    Suffix = " hours",
+    Step = 0.5,
+    Callback = function(Value)
+        local hours = math.floor(Value)
+        local minutes = math.floor((Value - hours) * 60)
+        local timeString = string.format("%02d:%02d:00", hours, minutes)
+        Lighting.TimeOfDay = timeString
+    end
+})
+
 local MovementPage = Window:Page({Name = "Movement"})
 local MoveSection = MovementPage:Section({Name = "Main", Side = 1})
 
