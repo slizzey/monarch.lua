@@ -4972,11 +4972,11 @@ local Library do
                     Name = "",
                     Items = { },
                     IsSettings = true,
-                    Elements = { } 
+                    Elements = { }
                 }
                 Toggle.Settings = Settings
 
-                SettingsItem = { } do 
+                SettingsItem = { } do
                     SettingsItem["Settings"] = Instances:Create("Frame", {
                         Parent = Library.UnusedHolder.Instance,
                         Name = "\0",
@@ -4985,7 +4985,7 @@ local Library do
                         AnchorPoint = Vector2New(0.5, 0.5),
                         BorderSizePixel = 1,
                         Position = UDim2New(0.8949604630470276, 0, 0.2945185601711273, 0),
-                        Size = UDim2New(0, 245, 0, 159),
+                        Size = UDim2New(0, 245, 0, 50),
                         ZIndex = 2,
                         AutomaticSize = Enum.AutomaticSize.Y,
                         BackgroundColor3 = FromRGB(21, 21, 24)
@@ -5021,20 +5021,17 @@ local Library do
                         Visible = false
                     })  Items["SettingsIcon"] = SettingsItem["SettingsIcon"]
 
-                    SettingsItem["Content"] = Instances:Create("ScrollingFrame", {
+                    SettingsItem["Content"] = Instances:Create("Frame", {
                         Parent = SettingsItem["Settings"].Instance,
                         Name = "\0",
-                        AutomaticCanvasSize = Enum.AutomaticSize.Y,
-                        Selectable = false,
-                        Size = UDim2New(1, -8, 1, -8),
+                        AutomaticSize = Enum.AutomaticSize.Y,
+                        Size = UDim2New(1, -8, 0, 0),
                         Position = UDim2New(0, 4, 0, 4),
-                        ScrollBarThickness = 2,
                         BackgroundColor3 = FromRGB(255, 255, 255),
                         BorderColor3 = FromRGB(0, 0, 0),
                         BorderSizePixel = 0,
-                        BackgroundTransparency = 1,
-                        CanvasSize = UDim2New(0, 0, 0, 0)
-                    })  SettingsItem["Content"]:AddToTheme({ScrollBarImageColor3 = "Accent"})
+                        BackgroundTransparency = 1
+                    })
                     
                     Instances:Create("UIListLayout", {
                         Parent = SettingsItem["Content"].Instance,

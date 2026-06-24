@@ -1569,7 +1569,7 @@ local ChamsToggle = ESPSection:Toggle({
     end
 })
 
-local ChamsSettings = ChamsToggle:Settings(220)
+local ChamsSettings = ChamsToggle:Settings()
 ChamsSettings:Label("Chams Fill Color"):Colorpicker({
     Name = "Chams Fill Color",
     Flag = "ChamsFillColor",
@@ -1703,7 +1703,7 @@ local FogToggle = VisualExtraSection:Toggle({
     end
 })
 
-local FogSettings = FogToggle:Settings(80)
+local FogSettings = FogToggle:Settings()
 FogSettings:Label("Fog Color"):Colorpicker({
     Name = "Fog Color",
     Flag = "AtmosphericFogColor",
@@ -1757,7 +1757,7 @@ local BloomToggle = VisualExtraSection:Toggle({
     end
 })
 
-local BloomSettings = BloomToggle:Settings(140)
+local BloomSettings = BloomToggle:Settings()
 BloomSettings:Slider({
     Name = "Intensity",
     Flag = "BloomIntensity",
@@ -1812,7 +1812,7 @@ local ColorCorrectionToggle = VisualExtraSection:Toggle({
     end
 })
 
-local ColorCorrectionSettings = ColorCorrectionToggle:Settings(180)
+local ColorCorrectionSettings = ColorCorrectionToggle:Settings()
 ColorCorrectionSettings:Slider({
     Name = "Contrast",
     Flag = "ColorContrast",
@@ -1863,7 +1863,7 @@ local SunRaysToggle = VisualExtraSection:Toggle({
     end
 })
 
-local SunRaysSettings = SunRaysToggle:Settings(100)
+local SunRaysSettings = SunRaysToggle:Settings()
 SunRaysSettings:Slider({
     Name = "Intensity",
     Flag = "SunRaysIntensity",
@@ -1904,7 +1904,7 @@ local DOFToggle = VisualExtraSection:Toggle({
     end
 })
 
-local DOFSettings = DOFToggle:Settings(180)
+local DOFSettings = DOFToggle:Settings()
 DOFSettings:Slider({
     Name = "Far Intensity",
     Flag = "DOFFarIntensity",
@@ -2003,7 +2003,7 @@ local WalkSpeedToggle = MoveSection:Toggle({
     end
 })
 
-local WalkSpeedSettings = WalkSpeedToggle:Settings(80)
+local WalkSpeedSettings = WalkSpeedToggle:Settings()
 WalkSpeedSettings:Slider({
     Name = "Speed",
     Flag = "SpeedValue",
@@ -2025,7 +2025,7 @@ local JumpHeightToggle = MoveSection:Toggle({
     end
 })
 
-local JumpHeightSettings = JumpHeightToggle:Settings(80)
+local JumpHeightSettings = JumpHeightToggle:Settings()
 JumpHeightSettings:Slider({
     Name = "Height",
     Flag = "JumpValue",
@@ -2072,7 +2072,7 @@ local FlyToggle = MoveSection:Toggle({
     end
 })
 
-local FlySettings = FlyToggle:Settings(80)
+local FlySettings = FlyToggle:Settings()
 FlySettings:Slider({
     Name = "Fly Speed",
     Flag = "FlySpeed",
@@ -2104,7 +2104,7 @@ local GravityToggle = MoveSection:Toggle({
     end
 })
 
-local GravitySettings = GravityToggle:Settings(80)
+local GravitySettings = GravityToggle:Settings()
 GravitySettings:Slider({
     Name = "Gravity Value",
     Flag = "GravityValue",
