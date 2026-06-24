@@ -267,7 +267,6 @@ local ESPState = {
 
 local MiscState = {
     fullbright = false,
-    noFog = false,
     antiAFK = false,
     fpsCounter = true,
     atmosphericFog = false,
@@ -1419,13 +1418,6 @@ local function updateLightingState()
         Lighting.OutdoorAmbient = originalLighting.OutdoorAmbient
         Lighting.GlobalShadows = true
     end
-    if MiscState.noFog then
-        Lighting.FogEnd = 100000
-        Lighting.FogStart = 0
-    else
-        Lighting.FogEnd = originalLighting.FogEnd
-        Lighting.FogStart = originalLighting.FogStart
-    end
 end
 
 local function fixCharacterAppearance()
@@ -2291,12 +2283,41 @@ VisualExtraSection:Toggle({
 })
 
 VisualExtraSection:Toggle({
-    Name = "No Fog",
-    Flag = "NoFog",
+    Name = "Rain",
+    Flag = "Rain",
     Default = false,
     Callback = function(Value)
-        MiscState.noFog = Value
-        updateLightingState()
+        if Value then
+            enableRain()
+        else
+            disableRain()
+        end
+    end
+})
+
+VisualExtraSection:Toggle({
+    Name = "Atmospheric Fog",
+    Flag = "AtmosphericFog",
+    Default = false,
+    Callback = function(Value)
+        if Value then
+            enableAtmosphericFog()
+        else
+            disableAtmosphericFog()
+        end
+    end
+})
+
+VisualExtraSection:Toggle({
+    Name = "Floating Lamps",
+    Flag = "FloatingLamps",
+    Default = false,
+    Callback = function(Value)
+        if Value then
+            enableFloatingLamps()
+        else
+            disableFloatingLamps()
+        end
     end
 })
 
@@ -2316,20 +2337,7 @@ VisualExtraSection:Slider({
     end
 })
 
-VisualExtraSection:Toggle({
-    Name = "Atmospheric Fog",
-    Flag = "AtmosphericFog",
-    Default = false,
-    Callback = function(Value)
-        if Value then
-            enableAtmosphericFog()
-        else
-            disableAtmosphericFog()
-        end
-    end
-})
-
-VisualExtraSection:Colorpicker({
+VisualExtraSection:Label("Fog Color"):Colorpicker({
     Name = "Fog Color",
     Flag = "AtmosphericFogColor",
     Default = Color3.fromRGB(185, 195, 210),
@@ -2339,32 +2347,6 @@ VisualExtraSection:Colorpicker({
             atmosphericFogInstance.Color = Value
             atmosphericFogInstance.Decay = Value
             Lighting.FogColor = Value
-        end
-    end
-})
-
-VisualExtraSection:Toggle({
-    Name = "Rain",
-    Flag = "Rain",
-    Default = false,
-    Callback = function(Value)
-        if Value then
-            enableRain()
-        else
-            disableRain()
-        end
-    end
-})
-
-VisualExtraSection:Toggle({
-    Name = "Floating Lamps",
-    Flag = "FloatingLamps",
-    Default = false,
-    Callback = function(Value)
-        if Value then
-            enableFloatingLamps()
-        else
-            disableFloatingLamps()
         end
     end
 })
