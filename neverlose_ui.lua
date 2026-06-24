@@ -5155,10 +5155,29 @@ local Library do
                         SettingsItem["Settings"].Instance.Parent = Library.Holder.Instance
                         
                         RenderStepped = RunService.RenderStepped:Connect(function()
-                            SettingsItem["Settings"].Instance.Position = UDim2New(
-                                0, Items["Toggle"].Instance.AbsolutePosition.X + Items["Toggle"].Instance.AbsoluteSize.X / 1.9 + 15, 
-                                0, Items["Toggle"].Instance.AbsolutePosition.Y + Items["Toggle"].Instance.AbsoluteSize.Y + Size / 1.9)
-                            SettingsItem["Settings"].Instance.Size = UDim2New(0, 245, 0, Size)
+                            local toggleX = Items["Toggle"].Instance.AbsolutePosition.X
+                            local toggleY = Items["Toggle"].Instance.AbsolutePosition.Y
+                            local toggleWidth = Items["Toggle"].Instance.AbsoluteSize.X
+                            local toggleHeight = Items["Toggle"].Instance.AbsoluteSize.Y
+
+                            local popupX = toggleX + toggleWidth / 1.9 + 15
+                            local popupY = toggleY + toggleHeight
+
+                            -- Get screen bounds
+                            local screenSize = Camera.ViewportSize
+                            local popupHeight = SettingsItem["Settings"].Instance.AbsoluteSize.Y
+
+                            -- Check if popup would go off-screen vertically
+                            if popupY + popupHeight > screenSize.Y then
+                                popupY = toggleY - popupHeight - 5
+                            end
+
+                            -- Check if popup would go off-screen horizontally
+                            if popupX + 245 > screenSize.X then
+                                popupX = toggleX - 245 - 15
+                            end
+
+                            SettingsItem["Settings"].Instance.Position = UDim2New(0, popupX, 0, popupY)
                         end)
     
                         for Index, Value in Library.OpenFrames do 
