@@ -2316,7 +2316,7 @@ VisualExtraSection:Slider({
     end
 })
 
-VisualExtraSection:Toggle({
+local fogToggle = VisualExtraSection:Toggle({
     Name = "Atmospheric Fog",
     Flag = "AtmosphericFog",
     Default = false,
@@ -2329,7 +2329,7 @@ VisualExtraSection:Toggle({
     end
 })
 
-VisualExtraSection:Label("Fog Color"):Colorpicker({
+fogToggle:Colorpicker({
     Name = "Fog Color",
     Flag = "AtmosphericFogColor",
     Default = Color3.fromRGB(185, 195, 210),
