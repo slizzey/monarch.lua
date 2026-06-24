@@ -1,15 +1,31 @@
 local Library = loadstring(game:HttpGet("https://raw.githubusercontent.com/ImInsane-1337/neverlose-ui/refs/heads/main/source/library.lua"))()
 
-local Players = game:GetService("Players")
 local UserInputService = game:GetService("UserInputService")
+local TweenService = game:GetService("TweenService")
+local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local Workspace = game:GetService("Workspace")
+local HttpService = game:GetService("HttpService")
 local Lighting = game:GetService("Lighting")
 local VirtualUser = game:GetService("VirtualUser")
-local TweenService = game:GetService("TweenService")
+local GuiService = game:GetService("GuiService")
+local TeleportService = game:GetService("TeleportService")
 
-local player = Players.LocalPlayer
-local Cam = Workspace.CurrentCamera
+local VirtualInputManager = nil
+pcall(function()
+    VirtualInputManager = game:GetService("VirtualInputManager")
+end)
+
+local LocalPlayer = Players.LocalPlayer or Players.PlayerAdded:Wait()
+local Camera = Workspace.CurrentCamera
+
+local function ensureCamera()
+    local cam = Workspace.CurrentCamera
+    if cam then
+        Camera = cam
+    end
+    return Camera
+end
 
 local CheatName = "Monarch"
 
@@ -52,6 +68,13 @@ task.spawn(function()
         task.wait(0.5)
     end
 end)
+
+local hasFileSystem = (writefile and readfile and isfile)
+local LOGO_FILE_NAME = "Monarch_Logo.png"
+local CONFIG_FILE = "Monarch_Config.json"
+local CONFIG_DIR = "Monarch_Configs"
+local CONFIG_INDEX_FILE = "Monarch_ConfigIndex.json"
+local AUTOLOAD_FLAG_FILE = "Monarch_AutoLoad.txt"
 
 local Settings = {
     Aim = {
@@ -128,7 +151,15 @@ local Settings = {
         NoFog = false,
         AntiAFK = false,
         MenuKeybind = Enum.KeyCode.Insert,
+        LogoAssetId = "",
+        LogoFileName = "Monarch_Logo.png",
+        AutoLoadConfig = true,
+        UnlockMouseOnMenu = true,
+        TopMostUI = true,
+        StreamProof = false,
         Whitelist = {},
+        HitNotifyLock = false,
+        HitNotifyShot = false,
     },
     Troll = {
         FlingPower = 500000,
@@ -180,6 +211,38 @@ local autoShootInterval = 0.1
 local velocityResolver = false
 local resolverStrength = 1
 
+local LockStatusGui = nil
+local lockStatusLabel = nil
+local BindToastGui = nil
+local BindToastFrame = nil
+local BindToastLabel = nil
+local bindToastToken = 0
+local savedConfigNames = {}
+local configDropdownOpen = false
+local menuOpen = false
+local KeybindCaptureActive = false
+local savedMouseState = nil
+local mouseUnlockConnection = nil
+local spectating = false
+local spectateTarget = nil
+local originalCameraSubject = nil
+local originalCameraType = nil
+local espSkeletonLines = {}
+local SKELETON_BONES = {
+    {"Head", "UpperTorso"}, {"Head", "Torso"},
+    {"UpperTorso", "LowerTorso"},
+    {"LowerTorso", "LeftUpperLeg"}, {"LeftUpperLeg", "LeftLowerLeg"}, {"LeftLowerLeg", "LeftFoot"},
+    {"LowerTorso", "RightUpperLeg"}, {"RightUpperLeg", "RightLowerLeg"}, {"RightLowerLeg", "RightFoot"},
+    {"UpperTorso", "LeftUpperArm"}, {"LeftUpperArm", "LeftLowerArm"}, {"LeftLowerArm", "LeftHand"},
+    {"UpperTorso", "RightUpperArm"}, {"RightUpperArm", "RightLowerArm"}, {"RightLowerArm", "RightHand"},
+    {"Torso", "Left Arm"}, {"Torso", "Right Arm"}, {"Torso", "Left Leg"}, {"Torso", "Right Leg"},
+}
+local MouseDriver = {name = "NONE", moveRel = nil, moveAbs = nil}
+local mouseGlobalsScanned = false
+local lastMouseMove = Vector2.zero
+local mouseApiName = "unknown"
+local lastMouseDriverRefreshAt = 0
+
 local shieldOn = false
 local forceField
 local currentSpeed = 16
@@ -228,6 +291,7 @@ local invisible = false
 local flingConnection = nil
 local orbitConnection = nil
 local spinConnection = nil
+local headSitConnection = nil
 local originalLighting = {
     Brightness = Lighting.Brightness,
     Ambient = Lighting.Ambient,
@@ -242,7 +306,7 @@ FOVring.Thickness = 1.5
 FOVring.Color = fovColor
 FOVring.Filled = false
 FOVring.Radius = fov
-FOVring.Position = Cam.ViewportSize / 2
+FOVring.Position = Camera.ViewportSize / 2
 FOVring.Transparency = 0.5
 
 local crosshairDrawings = {}
@@ -258,7 +322,7 @@ local LockStatusGui = nil
 local lockStatusLabel = nil
 
 local function initLockHud()
-    local playerGui = player:FindFirstChild("PlayerGui") or player:WaitForChild("PlayerGui", 20)
+    local playerGui = LocalPlayer:FindFirstChild("PlayerGui") or LocalPlayer:WaitForChild("PlayerGui", 20)
     if not playerGui then return false end
     local old = playerGui:FindFirstChild("Monarch_LockStatus")
     if old then old:Destroy() end
@@ -297,8 +361,86 @@ local function setLockHud(text, visible)
     end
 end
 
+local function notify(title, text, duration)
+    duration = duration or 4
+    pcall(function()
+        game:GetService("StarterGui"):SetCore("SendNotification", {
+            Title = tostring(title),
+            Text = tostring(text),
+            Duration = duration,
+        })
+    end)
+end
+
+local function initBindToast()
+    local playerGui = LocalPlayer:FindFirstChild("PlayerGui") or LocalPlayer:WaitForChild("PlayerGui", 20)
+    if not playerGui then return false end
+    local old = playerGui:FindFirstChild("Monarch_BindToast")
+    if old then old:Destroy() end
+    BindToastGui = Instance.new("ScreenGui")
+    BindToastGui.Name = "Monarch_BindToast"
+    BindToastGui.ResetOnSpawn = false
+    BindToastGui.IgnoreGuiInset = true
+    BindToastGui.DisplayOrder = 10000001
+    BindToastGui.Parent = playerGui
+    BindToastFrame = Instance.new("Frame")
+    BindToastFrame.Name = "Toast"
+    BindToastFrame.Size = UDim2.new(0, 300, 0, 46)
+    BindToastFrame.Position = UDim2.new(0.5, -150, 0, 52)
+    BindToastFrame.BackgroundColor3 = Color3.fromRGB(15, 15, 18)
+    BindToastFrame.BackgroundTransparency = 0.05
+    BindToastFrame.BorderSizePixel = 0
+    BindToastFrame.Visible = false
+    BindToastFrame.Parent = BindToastGui
+    Instance.new("UICorner", BindToastFrame).CornerRadius = UDim.new(0, 8)
+    local stroke = Instance.new("UIStroke")
+    stroke.Color = Color3.fromRGB(100, 60, 180)
+    stroke.Thickness = 1.5
+    stroke.Parent = BindToastFrame
+    BindToastLabel = Instance.new("TextLabel")
+    BindToastLabel.Size = UDim2.new(1, -16, 1, 0)
+    BindToastLabel.Position = UDim2.new(0, 8, 0, 0)
+    BindToastLabel.BackgroundTransparency = 1
+    BindToastLabel.Font = Enum.Font.GothamBold
+    BindToastLabel.TextSize = 16
+    BindToastLabel.Text = ""
+    BindToastLabel.Parent = BindToastFrame
+    return true
+end
+
+local function showBindToggleToast(featureName, enabled)
+    pcall(function()
+        if not BindToastFrame or not BindToastLabel or not BindToastGui.Parent then
+            if not initBindToast() then
+                notify("Monarch", featureName .. ": " .. (enabled and "ENABLED" or "DISABLED"), 3)
+                return
+            end
+        end
+        local playerGui = LocalPlayer:FindFirstChild("PlayerGui")
+        if playerGui and BindToastGui.Parent ~= playerGui then
+            BindToastGui.Parent = playerGui
+        end
+        BindToastGui.Enabled = true
+        bindToastToken = bindToastToken + 1
+        local token = bindToastToken
+        local stateText = enabled and "ENABLED" or "DISABLED"
+        local accent = enabled and Color3.fromRGB(70, 220, 110) or Color3.fromRGB(220, 70, 70)
+        BindToastLabel.Text = featureName .. ": " .. stateText
+        BindToastLabel.TextColor3 = accent
+        BindToastFrame.Visible = true
+        local stroke = BindToastFrame:FindFirstChild("UIStroke")
+        if stroke then stroke.Color = accent end
+        task.delay(2, function()
+            if bindToastToken ~= token or not BindToastFrame then return end
+            BindToastFrame.Visible = false
+        end)
+    end)
+end
+
+task.spawn(initBindToast)
+
 local function updateCrosshair()
-    local center = Cam.ViewportSize / 2
+    local center = Camera.ViewportSize / 2
     local size = crosshairSize
     for i, line in ipairs(crosshairDrawings) do
         line.Visible = crosshairEnabled
@@ -320,7 +462,7 @@ local function updateCrosshair()
 end
 
 local function updateDrawings()
-    FOVring.Position = Cam.ViewportSize / 2
+    FOVring.Position = Camera.ViewportSize / 2
     FOVring.Radius = fov
     FOVring.Color = fovColor
     FOVring.Visible = aimbotOn and showFOV
@@ -328,16 +470,127 @@ local function updateDrawings()
 end
 
 local function isWhitelisted(plr)
-    if type(whitelist) ~= "table" then return false end
-    for _, uid in ipairs(whitelist) do
+    if type(Settings.Misc.Whitelist) ~= "table" then return false end
+    for _, uid in ipairs(Settings.Misc.Whitelist) do
         if tonumber(uid) == plr.UserId then return true end
     end
     return false
 end
 
+local function lookupGlobalFunction(...)
+    for i = 1, select("#", ...) do
+        local name = select(i, ...)
+        local fn = rawget(_G, name)
+        if type(fn) == "function" then return fn, name end
+    end
+    if getgenv then
+        local ok, env = pcall(getgenv)
+        if ok and type(env) == "table" then
+            for i = 1, select("#", ...) do
+                local name = select(i, ...)
+                if type(env[name]) == "function" then return env[name], "getgenv." .. name end
+            end
+        end
+    end
+    if syn then
+        for i = 1, select("#", ...) do
+            local name = select(i, ...)
+            if type(syn[name]) == "function" then return syn[name], "syn." .. name end
+        end
+    end
+    return nil, nil
+end
+
+local function lookupInputMouseMove()
+    local tables = {}
+    if type(Input) == "table" then table.insert(tables, {tbl = Input, prefix = "Input"}) end
+    if type(input) == "table" then table.insert(tables, {tbl = input, prefix = "input"}) end
+    if getgenv then
+        local ok, env = pcall(getgenv)
+        if ok and type(env) == "table" then
+            if type(env.Input) == "table" then table.insert(tables, {tbl = env.Input, prefix = "getgenv.Input"}) end
+            if type(env.input) == "table" then table.insert(tables, {tbl = env.input, prefix = "getgenv.input"}) end
+        end
+    end
+    for _, entry in ipairs(tables) do
+        local moveFn = entry.tbl.MouseMove or entry.tbl.move or entry.tbl.Move
+        if type(moveFn) == "function" then
+            local key = entry.tbl.MouseMove and "MouseMove" or (entry.tbl.move and "move" or "Move")
+            return moveFn, entry.prefix .. "." .. key
+        end
+    end
+    return nil, nil
+end
+
+local function refreshMouseDriver()
+    if mouseGlobalsScanned then return end
+    mouseGlobalsScanned = true
+    MouseDriver.name = "NONE"
+    MouseDriver.moveRel = nil
+    MouseDriver.moveAbs = nil
+    pcall(function()
+        if type(mousemoverel) == "function" and not MouseDriver.moveRel then
+            MouseDriver.moveRel = mousemoverel
+            MouseDriver.name = "mousemoverel"
+        end
+        if type(mousemoveabs) == "function" and not MouseDriver.moveAbs then
+            MouseDriver.moveAbs = mousemoveabs
+        end
+    end)
+    local relFn, relName = lookupGlobalFunction("mousemoverel", "mouse_move_relative", "MouseMoveRelative", "MouseMoveRel", "mouse_move_rel", "mousereco")
+    if relFn then
+        MouseDriver.moveRel = relFn
+        MouseDriver.name = relName
+    end
+    if not MouseDriver.moveRel then
+        local inputMove, inputMoveName = lookupInputMouseMove()
+        if inputMove then
+            MouseDriver.moveRel = inputMove
+            MouseDriver.name = inputMoveName
+        end
+    end
+    local absFn, absName = lookupGlobalFunction("mousemoveabs", "MouseMoveAbs", "mouse_move_absolute")
+    if absFn then
+        MouseDriver.moveAbs = absFn
+        if MouseDriver.name == "NONE" then MouseDriver.name = absName end
+    end
+    if input and type(input.move) == "function" then
+        MouseDriver.moveRel = MouseDriver.moveRel or input.move
+        if MouseDriver.name == "NONE" then MouseDriver.name = "input.move" end
+    end
+    if not MouseDriver.moveRel and VirtualInputManager then
+        MouseDriver.name = "VIM"
+        MouseDriver.moveRel = function(ix, iy)
+            local pos = UserInputService:GetMouseLocation()
+            pcall(function() VirtualInputManager:SendMouseMoveEvent(pos.X + ix, pos.Y + iy, game) end)
+        end
+        MouseDriver.moveAbs = function(x, y)
+            pcall(function() VirtualInputManager:SendMouseMoveEvent(x, y, game) end)
+        end
+    end
+    mouseApiName = MouseDriver.name
+end
+
+refreshMouseDriver()
+
+local function mouseMoveRel(dx, dy)
+    if math.abs(dx) < 0.5 and math.abs(dy) < 0.5 then return end
+    local ix = math.floor(dx + 0.5)
+    local iy = math.floor(dy + 0.5)
+    if ix == 0 and math.abs(dx) >= 1 then ix = dx > 0 and 1 or -1 end
+    if iy == 0 and math.abs(dy) >= 1 then iy = dy > 0 and 1 or -1 end
+    if ix == 0 and iy == 0 then return end
+    lastMouseMove = Vector2.new(ix, iy)
+    if tick() - lastMouseDriverRefreshAt > 3 then
+        refreshMouseDriver()
+        lastMouseDriverRefreshAt = tick()
+    end
+    if MouseDriver.moveRel then pcall(MouseDriver.moveRel, ix, iy) end
+end
+
 local function isOnTeam(plr)
     if not teamCheck then return false end
-    local localTeam = player.Team
+    local localTeam = LocalPlayer.Team
     local targetTeam = plr.Team
     return localTeam and targetTeam and localTeam == targetTeam
 end
@@ -345,22 +598,22 @@ end
 local function isWallBetween(part1, part2)
     if not wallCheck then return false end
     local ray = Ray.new(part1.Position, (part2.Position - part1.Position).Unit * (part1.Position - part2.Position).Magnitude)
-    local hit, _ = Workspace:FindPartOnRay(ray, player.Character)
+    local hit, _ = Workspace:FindPartOnRay(ray, LocalPlayer.Character)
     return hit ~= nil
 end
 
 local function getClosestPlayerInFOV()
     local closest = nil
     local last = math.huge
-    local center = Cam.ViewportSize / 2
+    local center = Camera.ViewportSize / 2
     for _, plr in ipairs(Players:GetPlayers()) do
-        if plr ~= player and plr.Character then
+        if plr ~= LocalPlayer and plr.Character then
             if isWhitelisted(plr) then continue end
             if isOnTeam(plr) then continue end
             local part = plr.Character:FindFirstChild(targetPart)
             if part then
-                if wallCheck and isWallBetween(Cam, part) then continue end
-                local screenPos, onScreen = Cam:WorldToViewportPoint(part.Position)
+                if wallCheck and isWallBetween(Camera, part) then continue end
+                local screenPos, onScreen = Camera:WorldToViewportPoint(part.Position)
                 local dist = (Vector2.new(screenPos.X, screenPos.Y) - center).Magnitude
                 if onScreen and dist < last and dist < fov then
                     last = dist
@@ -379,12 +632,12 @@ local function getPredictedPosition(target)
 end
 
 local function lookAt(targetPos)
-    local lookVector = (targetPos - Cam.CFrame.Position).Unit
-    local newCFrame = CFrame.new(Cam.CFrame.Position, Cam.CFrame.Position + lookVector)
+    local lookVector = (targetPos - Camera.CFrame.Position).Unit
+    local newCFrame = CFrame.new(Camera.CFrame.Position, Camera.CFrame.Position + lookVector)
     if smoothness > 0 then
-        Cam.CFrame = Cam.CFrame:Lerp(newCFrame, smoothness)
+        Camera.CFrame = Camera.CFrame:Lerp(newCFrame, smoothness)
     else
-        Cam.CFrame = newCFrame
+        Camera.CFrame = newCFrame
     end
 end
 
@@ -406,16 +659,16 @@ local function checkTriggerbot()
     if not triggerbotOn then return end
     local mousePos = UserInputService:GetMouseLocation()
     for _, plr in ipairs(Players:GetPlayers()) do
-        if plr ~= player and plr.Character then
+        if plr ~= LocalPlayer and plr.Character then
             if isWhitelisted(plr) then continue end
             if isOnTeam(plr) then continue end
             local head = plr.Character:FindFirstChild("Head")
             if head then
-                local screenPos, onScreen = Cam:WorldToViewportPoint(head.Position)
+                local screenPos, onScreen = Camera:WorldToViewportPoint(head.Position)
                 if onScreen then
                     local dist = (Vector2.new(screenPos.X, screenPos.Y) - mousePos).Magnitude
                     if dist < triggerbotRadius then
-                        if triggerbotWallCheck and isWallBetween(Cam, head) then continue end
+                        if triggerbotWallCheck and isWallBetween(Camera, head) then continue end
                         if tick() - lastTriggerbotAt >= triggerbotDelay then
                             lastTriggerbotAt = tick()
                             mouse1click()
@@ -442,7 +695,7 @@ end
 local function cycleTrollTarget()
     local targets = {}
     for _, plr in ipairs(Players:GetPlayers()) do
-        if plr ~= player and plr.Character then
+        if plr ~= LocalPlayer and plr.Character then
             table.insert(targets, plr)
         end
     end
@@ -470,7 +723,7 @@ end
 
 local function flingTargetOnce(target)
     if not target or not target.Character then return end
-    local localRoot = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
+    local localRoot = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
     local targetRoot = target.Character:FindFirstChild("HumanoidRootPart")
     if localRoot and targetRoot then
         localRoot.CFrame = targetRoot.CFrame * CFrame.new(0, 0, 1)
@@ -507,7 +760,7 @@ local function startOrbit()
         if not orbitTarget then return end
         local target = getTrollTarget()
         if not target or not target.Character then return end
-        local localRoot = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
+        local localRoot = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
         local targetRoot = target.Character:FindFirstChild("HumanoidRootPart")
         if localRoot and targetRoot then
             local angle = (tick() - startTime) * orbitSpeed
@@ -529,15 +782,36 @@ local function startSpinTroll()
     spinTroll = true
     spinConnection = RunService.Heartbeat:Connect(function()
         if not spinTroll then return end
-        local localRoot = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
+        local localRoot = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
         if localRoot then
             localRoot.CFrame = localRoot.CFrame * CFrame.Angles(0, math.rad(15), 0)
         end
     end)
 end
 
+local function clearHeadSit()
+    if headSitConnection then
+        headSitConnection:Disconnect()
+        headSitConnection = nil
+    end
+end
+
+local function startHeadSit()
+    clearHeadSit()
+    headSit = true
+    headSitConnection = RunService.Heartbeat:Connect(function()
+        if not headSit then return end
+        if not trollTarget or not trollTarget.Character then return end
+        local localRoot = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+        local targetHead = trollTarget.Character:FindFirstChild("Head")
+        if localRoot and targetHead then
+            localRoot.CFrame = targetHead.CFrame * CFrame.new(0, 0, 0)
+        end
+    end)
+end
+
 local function updateInvisibleState()
-    local char = player.Character
+    local char = LocalPlayer.Character
     if not char then return end
     for _, part in ipairs(char:GetDescendants()) do
         if part:IsA("BasePart") then
@@ -566,7 +840,7 @@ local function updateLightingState()
 end
 
 local function createESP(plr)
-    if plr == player then return end
+    if plr == LocalPlayer then return end
     local box = Drawing.new("Square")
     box.Thickness = 1
     box.Filled = false
@@ -609,6 +883,17 @@ local function createESP(plr)
         highlight.Parent = plr.Character
         espHighlights[plr] = highlight
     end
+    if showSkeleton then
+        espSkeletonLines[plr] = {}
+        for _, bonePair in ipairs(SKELETON_BONES) do
+            local line = Drawing.new("Line")
+            line.Thickness = 1
+            line.Color = espColor
+            line.Transparency = 0.6
+            line.Visible = false
+            table.insert(espSkeletonLines[plr], line)
+        end
+    end
 end
 
 local function removeESP(plr)
@@ -621,6 +906,12 @@ local function removeESP(plr)
     if espHighlights[plr] then
         espHighlights[plr]:Destroy()
         espHighlights[plr] = nil
+    end
+    if espSkeletonLines[plr] then
+        for _, line in ipairs(espSkeletonLines[plr]) do
+            line:Remove()
+        end
+        espSkeletonLines[plr] = nil
     end
 end
 
@@ -651,13 +942,13 @@ Players.PlayerAdded:Connect(createESP)
 Players.PlayerRemoving:Connect(removeESP)
 
 RunService.Heartbeat:Connect(function()
-    local hum = player.Character and player.Character:FindFirstChild("Humanoid")
+    local hum = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid")
     if hum then hum.WalkSpeed = currentSpeed end
 end)
 
 UserInputService.JumpRequest:Connect(function()
     if not infJumpOn then return end
-    local char = player.Character
+    local char = LocalPlayer.Character
     if not char then return end
     local hum = char:FindFirstChild("Humanoid")
     local root = char:FindFirstChild("HumanoidRootPart")
@@ -669,7 +960,7 @@ end)
 
 RunService.Stepped:Connect(function()
     if not noclipOn then return end
-    local char = player.Character
+    local char = LocalPlayer.Character
     if char then
         for _, part in ipairs(char:GetDescendants()) do
             if part:IsA("BasePart") then
@@ -681,21 +972,21 @@ end)
 
 RunService.RenderStepped:Connect(function(dt)
     if not flyOn then return end
-    local char = player.Character
+    local char = LocalPlayer.Character
     local root = char and char:FindFirstChild("HumanoidRootPart")
     if not root then return end
     local moveDir = Vector3.new()
-    if UserInputService:IsKeyDown(Enum.KeyCode.W) then moveDir += Cam.CFrame.LookVector end
-    if UserInputService:IsKeyDown(Enum.KeyCode.S) then moveDir -= Cam.CFrame.LookVector end
-    if UserInputService:IsKeyDown(Enum.KeyCode.A) then moveDir -= Cam.CFrame.RightVector end
-    if UserInputService:IsKeyDown(Enum.KeyCode.D) then moveDir += Cam.CFrame.RightVector end
+    if UserInputService:IsKeyDown(Enum.KeyCode.W) then moveDir += Camera.CFrame.LookVector end
+    if UserInputService:IsKeyDown(Enum.KeyCode.S) then moveDir -= Camera.CFrame.LookVector end
+    if UserInputService:IsKeyDown(Enum.KeyCode.A) then moveDir -= Camera.CFrame.RightVector end
+    if UserInputService:IsKeyDown(Enum.KeyCode.D) then moveDir += Camera.CFrame.RightVector end
     if UserInputService:IsKeyDown(Enum.KeyCode.Space) then moveDir += Vector3.new(0, 1, 0) end
     if UserInputService:IsKeyDown(Enum.KeyCode.LeftControl) then moveDir -= Vector3.new(0, 1, 0) end
     if moveDir.Magnitude > 0 then
         moveDir = moveDir.Unit
         root.CFrame = root.CFrame + (moveDir * flySpeed * dt)
     end
-    root.CFrame = CFrame.new(root.Position) * Cam.CFrame.Rotation
+    root.CFrame = CFrame.new(root.Position) * Camera.CFrame.Rotation
 end)
 
 RunService.RenderStepped:Connect(function()
@@ -717,7 +1008,7 @@ RunService.RenderStepped:Connect(function()
     autoShoot()
 end)
 
-player.CharacterAdded:Connect(function(newChar)
+LocalPlayer.CharacterAdded:Connect(function(newChar)
     task.wait(0.5)
     local hum = newChar:WaitForChild("Humanoid")
     hum.WalkSpeed = currentSpeed
@@ -744,6 +1035,11 @@ RunService.RenderStepped:Connect(function()
         for _, highlight in pairs(espHighlights) do
             highlight.Enabled = false
         end
+        for _, lines in pairs(espSkeletonLines) do
+            for _, line in ipairs(lines) do
+                line.Visible = false
+            end
+        end
         return
     end
     for plr, data in pairs(espDrawings) do
@@ -753,6 +1049,11 @@ RunService.RenderStepped:Connect(function()
             data.name.Visible = false
             data.dist.Visible = false
             if espHighlights[plr] then espHighlights[plr].Enabled = false end
+            if espSkeletonLines[plr] then
+                for _, line in ipairs(espSkeletonLines[plr]) do
+                    line.Visible = false
+                end
+            end
             continue
         end
         if plr.Character and plr.Character:FindFirstChild("HumanoidRootPart") and plr.Character:FindFirstChild("Head") then
@@ -760,9 +1061,9 @@ RunService.RenderStepped:Connect(function()
             local head = plr.Character.Head
             local humanoid = plr.Character:FindFirstChild("Humanoid")
             if humanoid and humanoid.Health > 0 then
-                local rootPos, onScreen = Cam:WorldToViewportPoint(hrp.Position)
-                local headPos = Cam:WorldToViewportPoint(head.Position + Vector3.new(0, 0.5, 0))
-                local legPos = Cam:WorldToViewportPoint(hrp.Position - Vector3.new(0, 3.5, 0))
+                local rootPos, onScreen = Camera:WorldToViewportPoint(hrp.Position)
+                local headPos = Camera:WorldToViewportPoint(head.Position + Vector3.new(0, 0.5, 0))
+                local legPos = Camera:WorldToViewportPoint(hrp.Position - Vector3.new(0, 3.5, 0))
                 if onScreen then
                     local height = math.abs(headPos.Y - legPos.Y)
                     local width = height * 0.45
@@ -780,7 +1081,7 @@ RunService.RenderStepped:Connect(function()
                         data.box.Visible = false
                     end
                     if showTracers then
-                        data.tracer.From = Vector2.new(Cam.ViewportSize.X / 2, Cam.ViewportSize.Y)
+                        data.tracer.From = Vector2.new(Camera.ViewportSize.X / 2, Camera.ViewportSize.Y)
                         data.tracer.To = Vector2.new(rootPos.X, rootPos.Y)
                         data.tracer.Visible = true
                     else
@@ -794,42 +1095,295 @@ RunService.RenderStepped:Connect(function()
                         data.name.Visible = false
                     end
                     if showDistance then
-                        local distance = (player.Character and player.Character:FindFirstChild("HumanoidRootPart")) and
-                            (player.Character.HumanoidRootPart.Position - hrp.Position).Magnitude or 0
+                        local distance = (LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")) and
+                            (LocalPlayer.Character.HumanoidRootPart.Position - hrp.Position).Magnitude or 0
                         data.dist.Text = math.floor(distance) .. " studs"
                         data.dist.Position = Vector2.new(rootPos.X, rootPos.Y + height/2 + 2)
                         data.dist.Visible = true
                     else
                         data.dist.Visible = false
                     end
+                    if showSkeleton and espSkeletonLines[plr] then
+                        for i, bonePair in ipairs(SKELETON_BONES) do
+                            local part1 = plr.Character:FindFirstChild(bonePair[1])
+                            local part2 = plr.Character:FindFirstChild(bonePair[2])
+                            local line = espSkeletonLines[plr][i]
+                            if part1 and part2 and line then
+                                local pos1, onScreen1 = Camera:WorldToViewportPoint(part1.Position)
+                                local pos2, onScreen2 = Camera:WorldToViewportPoint(part2.Position)
+                                if onScreen1 and onScreen2 then
+                                    line.From = Vector2.new(pos1.X, pos1.Y)
+                                    line.To = Vector2.new(pos2.X, pos2.Y)
+                                    line.Color = color
+                                    line.Visible = true
+                                else
+                                    line.Visible = false
+                                end
+                            else
+                                line.Visible = false
+                            end
+                        end
+                    elseif espSkeletonLines[plr] then
+                        for _, line in ipairs(espSkeletonLines[plr]) do
+                            line.Visible = false
+                        end
+                    end
                 else
                     data.box.Visible = false
                     data.tracer.Visible = false
                     data.name.Visible = false
                     data.dist.Visible = false
+                    if espSkeletonLines[plr] then
+                        for _, line in ipairs(espSkeletonLines[plr]) do
+                            line.Visible = false
+                        end
+                    end
                 end
             else
                 data.box.Visible = false
                 data.tracer.Visible = false
                 data.name.Visible = false
                 data.dist.Visible = false
+                if espSkeletonLines[plr] then
+                    for _, line in ipairs(espSkeletonLines[plr]) do
+                        line.Visible = false
+                    end
+                end
             end
         else
             data.box.Visible = false
             data.tracer.Visible = false
             data.name.Visible = false
             data.dist.Visible = false
+            if espSkeletonLines[plr] then
+                for _, line in ipairs(espSkeletonLines[plr]) do
+                    line.Visible = false
+                end
+            end
         end
     end
     refreshCharms()
 end)
 
-player.Idled:Connect(function()
+LocalPlayer.Idled:Connect(function()
     if antiAFK then
         VirtualUser:CaptureFocus()
         VirtualUser:ClickButton2(Vector2.new(0, 0))
     end
 end)
+
+local function startSpectate(target)
+    if spectating then return end
+    if not target or not target.Character then return end
+    spectating = true
+    spectateTarget = target
+    originalCameraSubject = Camera.CameraSubject
+    originalCameraType = Camera.CameraType
+    Camera.CameraType = Enum.CameraType.Fixed
+    Camera.CameraSubject = target.Character:FindFirstChild("Humanoid")
+    notify("Monarch", "Spectating: " .. target.Name, 3)
+end
+
+local function stopSpectate()
+    if not spectating then return end
+    spectating = false
+    spectateTarget = nil
+    if originalCameraSubject then
+        Camera.CameraSubject = originalCameraSubject
+    end
+    if originalCameraType then
+        Camera.CameraType = originalCameraType
+    end
+    notify("Monarch", "Stopped spectating", 2)
+end
+
+local function voteKickPlayer(target)
+    if not target then return end
+    pcall(function()
+        local TextChatService = game:GetService("TextChatService")
+        if TextChatService then
+            local channel = TextChatService:FindFirstChild("TextChannels"):FindFirstChild("RBXGeneral")
+            if channel then
+                channel:SendAsync("/vk " .. target.Name)
+            end
+        else
+        local StarterGui = game:GetService("StarterGui")
+        StarterGui:SetCore("ChatMakeSystemMessage", {
+            Text = "[Monarch] Vote kick: /vk " .. target.Name,
+            Color = Color3.fromRGB(100, 60, 180),
+        })
+        end
+    end)
+end
+
+local function respawnCharacter()
+    local char = LocalPlayer.Character
+    if char then
+        char:BreakJoints()
+    end
+end
+
+local function rejoinGame()
+    TeleportService:Teleport(game.PlaceId)
+end
+
+local function ensureFolders()
+    if hasFileSystem then
+        pcall(function()
+            if not isfolder(Library.Folders.Directory) then
+                makefolder(Library.Folders.Directory)
+            end
+            if not isfolder(Library.Folders.Configs) then
+                makefolder(Library.Folders.Configs)
+            end
+            if not isfolder(Library.Folders.Assets) then
+                makefolder(Library.Folders.Assets)
+            end
+        end)
+    end
+end
+
+local function loadConfigIndex()
+    if not hasFileSystem then return {} end
+    pcall(function()
+        if isfile(CONFIG_INDEX_FILE) then
+            local content = readfile(CONFIG_INDEX_FILE)
+            local decoded = HttpService:JSONDecode(content)
+            if type(decoded) == "table" then
+                return decoded
+            end
+        end
+    end)
+    return {}
+end
+
+local function saveConfigIndex(index)
+    if not hasFileSystem then return end
+    pcall(function()
+        local encoded = HttpService:JSONEncode(index)
+        writefile(CONFIG_INDEX_FILE, encoded)
+    end)
+end
+
+local function refreshConfigList()
+    savedConfigNames = {}
+    if not hasFileSystem then return end
+    pcall(function()
+        local files = listfiles(Library.Folders.Configs)
+        for _, file in ipairs(files) do
+            local name = file:match("([^/\\]+)$")
+            if name and name:sub(-5) == ".json" then
+                table.insert(savedConfigNames, name:sub(1, -6))
+            end
+        end
+    end)
+end
+
+local function saveConfig(name)
+    if not hasFileSystem then return false end
+    ensureFolders()
+    if not name or name == "" then return false end
+    local config = {
+        Aim = Settings.Aim,
+        ESP = Settings.ESP,
+        Movement = Settings.Movement,
+        Misc = Settings.Misc,
+        Troll = Settings.Troll,
+        Binds = Settings.Binds,
+    }
+    local fileName = Library.Folders.Configs .. "/" .. name .. ".json"
+    local success = pcall(function()
+        local encoded = HttpService:JSONEncode(config)
+        writefile(fileName, encoded)
+    end)
+    if success then
+        local index = loadConfigIndex()
+        if not table.find(index, name) then
+            table.insert(index, name)
+            saveConfigIndex(index)
+        end
+        refreshConfigList()
+        notify("Monarch", "Config saved: " .. name, 3)
+        return true
+    end
+    return false
+end
+
+local function loadConfig(name)
+    if not hasFileSystem then return false end
+    if not name or name == "" then return false end
+    local fileName = Library.Folders.Configs .. "/" .. name .. ".json"
+    local success, decoded = pcall(function()
+        local content = readfile(fileName)
+        return HttpService:JSONDecode(content)
+    end)
+    if success and type(decoded) == "table" then
+        if decoded.Aim then Settings.Aim = decoded.Aim end
+        if decoded.ESP then Settings.ESP = decoded.ESP end
+        if decoded.Movement then Settings.Movement = decoded.Movement end
+        if decoded.Misc then Settings.Misc = decoded.Misc end
+        if decoded.Troll then Settings.Troll = decoded.Troll end
+        if decoded.Binds then Settings.Binds = decoded.Binds end
+        notify("Monarch", "Config loaded: " .. name, 3)
+        return true
+    end
+    return false
+end
+
+local function deleteConfig(name)
+    if not hasFileSystem then return false end
+    if not name or name == "" then return false end
+    local fileName = Library.Folders.Configs .. "/" .. name .. ".json"
+    local success = pcall(function()
+        delfile(fileName)
+    end)
+    if success then
+        local index = loadConfigIndex()
+        local newIndex = {}
+        for _, n in ipairs(index) do
+            if n ~= name then
+                table.insert(newIndex, n)
+            end
+        end
+        saveConfigIndex(newIndex)
+        refreshConfigList()
+        notify("Monarch", "Config deleted: " .. name, 3)
+        return true
+    end
+    return false
+end
+
+local function getAutoLoadConfig()
+    if not hasFileSystem then return nil end
+    pcall(function()
+        if isfile(AUTOLOAD_FLAG_FILE) then
+            local content = readfile(AUTOLOAD_FLAG_FILE)
+            return content
+        end
+    end)
+    return nil
+end
+
+local function setAutoLoadConfig(name)
+    if not hasFileSystem then return end
+    pcall(function()
+        if name and name ~= "" then
+            writefile(AUTOLOAD_FLAG_FILE, name)
+        else
+            if isfile(AUTOLOAD_FLAG_FILE) then
+                delfile(AUTOLOAD_FLAG_FILE)
+            end
+        end
+    end)
+end
+
+ensureFolders()
+refreshConfigList()
+local autoLoadName = getAutoLoadConfig()
+if autoLoadName and Settings.Misc.AutoLoadConfig then
+    task.wait(0.5)
+    loadConfig(autoLoadName)
+end
 
 Window:Category("Aim")
 
@@ -925,6 +1479,26 @@ AimMainSection:Dropdown({
     Multi = false,
     Callback = function(Value)
         lockMode = Value[1]
+    end
+})
+
+AimMainSection:Toggle({
+    Name = "Auto Switch Target",
+    Flag = "AutoSwitch",
+    Default = true,
+    Callback = function(Value)
+        Settings.Aim.AutoSwitch = Value
+    end
+})
+
+AimMainSection:Dropdown({
+    Name = "Target Mode",
+    Flag = "TargetMode",
+    Default = {"FOV"},
+    Items = {"FOV", "Distance"},
+    Multi = false,
+    Callback = function(Value)
+        Settings.Aim.TargetMode = Value[1]
     end
 })
 
@@ -1097,6 +1671,15 @@ ESPSection:Toggle({
 })
 
 ESPSection:Toggle({
+    Name = "Show Teammates",
+    Flag = "ShowTeammates",
+    Default = false,
+    Callback = function(Value)
+        showTeam = Value
+    end
+})
+
+ESPSection:Toggle({
     Name = "Enable Charms",
     Flag = "CharmsEnabled",
     Default = false,
@@ -1191,6 +1774,21 @@ ESPSection:Label("Team Color"):Colorpicker({
     end
 })
 
+ESPSection:Toggle({
+    Name = "Skeleton ESP",
+    Flag = "SkeletonESP",
+    Default = false,
+    Callback = function(Value)
+        showSkeleton = Value
+        for plr, _ in pairs(espDrawings) do
+            if plr ~= LocalPlayer then
+                removeESP(plr)
+                createESP(plr)
+            end
+        end
+    end
+})
+
 local VisualExtraSection = VisualPage:Section({Name = "Visuals", Side = 2})
 
 VisualExtraSection:Toggle({
@@ -1217,6 +1815,24 @@ Window:Category("Movement")
 
 local MovementPage = Window:Page({Name = "Movement", Icon = "138827881557940"})
 local MoveSection = MovementPage:Section({Name = "Movement", Side = 1})
+
+MoveSection:Toggle({
+    Name = "Shield",
+    Flag = "ShieldEnabled",
+    Default = false,
+    Callback = function(Value)
+        shieldOn = Value
+        local char = LocalPlayer.Character
+        if char then
+            if shieldOn then
+                forceField = Instance.new("ForceField")
+                forceField.Parent = char
+            else
+                if forceField then forceField:Destroy() end
+            end
+        end
+    end
+})
 
 MoveSection:Toggle({
     Name = "Speed Hack",
@@ -1341,102 +1957,161 @@ MoveSection:Slider({
 Window:Category("Players")
 
 local PlayersPage = Window:Page({Name = "Players", Icon = "138827881557940"})
-local PlayersSection = PlayersPage:Section({Name = "Player List", Side = 1})
+local PlayersSection = PlayersPage:Section({Name = "Player Selection", Side = 1})
 
-local function refreshPlayerList()
-    for _, child in ipairs(PlayersSection:GetDescendants()) do
-        if child:IsA("Frame") and child.Name == "PlayerRow" then child:Destroy() end
-    end
+local playerList = {}
+local selectedPlayerName = ""
+
+local function updatePlayerList()
+    playerList = {}
     for _, plr in ipairs(Players:GetPlayers()) do
-        if plr == player then continue end
-        local row = Instance.new("Frame")
-        row.Name = "PlayerRow"
-        row.Size = UDim2.new(1, 0, 0, 35)
-        row.BackgroundColor3 = Color3.fromRGB(18, 18, 22)
-        row.Parent = PlayersSection
-        Instance.new("UICorner", row).CornerRadius = UDim.new(0, 4)
-        local nameLabel = Instance.new("TextLabel")
-        nameLabel.Size = UDim2.new(0.5, 0, 1, 0)
-        nameLabel.Position = UDim2.new(0, 8, 0, 0)
-        nameLabel.BackgroundTransparency = 1
-        nameLabel.Text = plr.DisplayName
-        nameLabel.TextColor3 = Color3.fromRGB(230, 230, 235)
-        nameLabel.Font = Enum.Font.GothamMedium
-        nameLabel.TextSize = 11
-        nameLabel.TextXAlignment = Enum.TextXAlignment.Left
-        nameLabel.Parent = row
-        local wlBtn = Instance.new("TextButton")
-        wlBtn.Size = UDim2.new(0, 50, 0, 22)
-        wlBtn.Position = UDim2.new(1, -120, 0.5, -11)
-        wlBtn.BackgroundColor3 = isWhitelisted(plr) and Color3.fromRGB(70, 180, 90) or Color3.fromRGB(28, 28, 34)
-        wlBtn.Text = isWhitelisted(plr) and "WL+" or "WL"
-        wlBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-        wlBtn.Font = Enum.Font.GothamBold
-        wlBtn.TextSize = 9
-        wlBtn.Parent = row
-        Instance.new("UICorner", wlBtn).CornerRadius = UDim.new(0, 4)
-        wlBtn.MouseButton1Click:Connect(function()
-            if isWhitelisted(plr) then
-                for i, uid in ipairs(whitelist) do
-                    if tonumber(uid) == plr.UserId then
-                        table.remove(whitelist, i)
-                        break
-                    end
-                end
-            else
-                table.insert(whitelist, plr.UserId)
-            end
-            refreshPlayerList()
-        end)
-        local tpBtn = Instance.new("TextButton")
-        tpBtn.Size = UDim2.new(0, 50, 0, 22)
-        tpBtn.Position = UDim2.new(1, -64, 0.5, -11)
-        tpBtn.BackgroundColor3 = Color3.fromRGB(100, 60, 180)
-        tpBtn.Text = "TP"
-        tpBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-        tpBtn.Font = Enum.Font.GothamBold
-        tpBtn.TextSize = 10
-        tpBtn.Parent = row
-        Instance.new("UICorner", tpBtn).CornerRadius = UDim.new(0, 4)
-        tpBtn.MouseButton1Click:Connect(function()
-            local localChar = player.Character
-            local targetChar = plr.Character
-            if localChar and targetChar then
-                local localRoot = localChar:FindFirstChild("HumanoidRootPart")
-                local targetRoot = targetChar:FindFirstChild("HumanoidRootPart")
-                if localRoot and targetRoot then
-                    localRoot.CFrame = targetRoot.CFrame * CFrame.new(0, 0, 4)
-                end
-            end
-        end)
+        if plr ~= LocalPlayer then
+            table.insert(playerList, plr.Name)
+        end
     end
 end
+
+updatePlayerList()
+
+PlayersSection:Dropdown({
+    Name = "Select Target",
+    Flag = "TargetPlayer",
+    Default = {},
+    Items = playerList,
+    Multi = false,
+    Callback = function(Value)
+        if Value and #Value > 0 then
+            selectedPlayerName = Value[1]
+            for _, plr in ipairs(Players:GetPlayers()) do
+                if plr.Name == selectedPlayerName then
+                    trollTarget = plr
+                    break
+                end
+            end
+        end
+    end
+})
 
 PlayersSection:Button({
     Name = "Refresh Player List",
     Callback = function()
-        refreshPlayerList()
+        updatePlayerList()
+        notify("Monarch", "Player list refreshed", 2)
     end
 })
 
-local PlayersExtraSection = PlayersPage:Section({Name = "Whitelist Info", Side = 2})
+local PlayersActionSection = PlayersPage:Section({Name = "Actions", Side = 1})
 
-local WhitelistLabel = Instance.new("TextLabel")
-WhitelistLabel.Size = UDim2.new(1, 0, 0, 20)
-WhitelistLabel.BackgroundTransparency = 1
-WhitelistLabel.Text = "Whitelisted: 0"
-WhitelistLabel.TextColor3 = Color3.fromRGB(230, 230, 235)
-WhitelistLabel.Font = Enum.Font.GothamBold
-WhitelistLabel.TextSize = 11
-WhitelistLabel.Parent = PlayersExtraSection
+PlayersActionSection:Button({
+    Name = "Teleport to Target",
+    Callback = function()
+        if not trollTarget then
+            notify("Monarch", "No target selected", 2)
+            return
+        end
+        local localChar = LocalPlayer.Character
+        local targetChar = trollTarget.Character
+        if localChar and targetChar then
+            local localRoot = localChar:FindFirstChild("HumanoidRootPart")
+            local targetRoot = targetChar:FindFirstChild("HumanoidRootPart")
+            if localRoot and targetRoot then
+                localRoot.CFrame = targetRoot.CFrame * CFrame.new(0, 0, 4)
+            end
+        end
+    end
+})
 
-local function updateWhitelistLabel()
-    WhitelistLabel.Text = "Whitelisted: " .. #whitelist
-end
+PlayersActionSection:Button({
+    Name = "Spectate Target",
+    Callback = function()
+        if not trollTarget then
+            notify("Monarch", "No target selected", 2)
+            return
+        end
+        startSpectate(trollTarget)
+    end
+})
 
-refreshPlayerList()
-Players.PlayerAdded:Connect(refreshPlayerList)
-Players.PlayerRemoving:Connect(refreshPlayerList)
+PlayersActionSection:Button({
+    Name = "Stop Spectating",
+    Callback = function()
+        stopSpectate()
+    end
+})
+
+PlayersActionSection:Button({
+    Name = "Vote Kick Target",
+    Callback = function()
+        if not trollTarget then
+            notify("Monarch", "No target selected", 2)
+            return
+        end
+        voteKickPlayer(trollTarget)
+    end
+})
+
+local WhitelistSection = PlayersPage:Section({Name = "Whitelist", Side = 2})
+
+WhitelistSection:Dropdown({
+    Name = "Whitelist Player",
+    Flag = "WhitelistPlayer",
+    Default = {},
+    Items = playerList,
+    Multi = false,
+    Callback = function(Value)
+        if Value and #Value > 0 then
+            local name = Value[1]
+            for _, plr in ipairs(Players:GetPlayers()) do
+                if plr.Name == name then
+                    if not isWhitelisted(plr) then
+                        table.insert(Settings.Misc.Whitelist, plr.UserId)
+                        notify("Monarch", "Whitelisted: " .. name, 2)
+                    else
+                        for i, uid in ipairs(Settings.Misc.Whitelist) do
+                            if tonumber(uid) == plr.UserId then
+                                table.remove(Settings.Misc.Whitelist, i)
+                                break
+                            end
+                        end
+                        notify("Monarch", "Removed from whitelist: " .. name, 2)
+                    end
+                    break
+                end
+            end
+        end
+    end
+})
+
+WhitelistSection:Button({
+    Name = "Clear Whitelist",
+    Callback = function()
+        Settings.Misc.Whitelist = {}
+        notify("Monarch", "Whitelist cleared", 2)
+    end
+})
+
+local PlayersExtraSection = PlayersPage:Section({Name = "Game Actions", Side = 2})
+
+PlayersExtraSection:Button({
+    Name = "Respawn",
+    Callback = function()
+        respawnCharacter()
+    end
+})
+
+PlayersExtraSection:Button({
+    Name = "Rejoin",
+    Callback = function()
+        rejoinGame()
+    end
+})
+
+Players.PlayerAdded:Connect(function()
+    updatePlayerList()
+end)
+Players.PlayerRemoving:Connect(function()
+    updatePlayerList()
+end)
 
 Window:Category("Troll")
 
@@ -1518,7 +2193,11 @@ TrollSection:Toggle({
     Flag = "HeadSit",
     Default = false,
     Callback = function(Value)
-        headSit = Value
+        if Value then
+            startHeadSit()
+        else
+            clearHeadSit()
+        end
     end
 })
 
@@ -1582,6 +2261,78 @@ MiscSection:Toggle({
     Callback = function(Value)
         noFog = Value
         updateLightingState()
+    end
+})
+
+MiscSection:Toggle({
+    Name = "Auto Load Config",
+    Flag = "AutoLoadConfig",
+    Default = true,
+    Callback = function(Value)
+        Settings.Misc.AutoLoadConfig = Value
+    end
+})
+
+MiscSection:Toggle({
+    Name = "Unlock Mouse on Menu",
+    Flag = "UnlockMouseOnMenu",
+    Default = true,
+    Callback = function(Value)
+        Settings.Misc.UnlockMouseOnMenu = Value
+    end
+})
+
+MiscSection:Toggle({
+    Name = "Stream Proof",
+    Flag = "StreamProof",
+    Default = false,
+    Callback = function(Value)
+        Settings.Misc.StreamProof = Value
+        if LockStatusGui then
+            LockStatusGui.ResetOnSpawn = not Value
+        end
+        if BindToastGui then
+            BindToastGui.ResetOnSpawn = not Value
+        end
+    end
+})
+
+local ConfigSection = MiscPage:Section({Name = "Config", Side = 2})
+
+ConfigSection:Button({
+    Name = "Save Config",
+    Callback = function()
+        local name = "Default"
+        saveConfig(name)
+    end
+})
+
+ConfigSection:Button({
+    Name = "Load Config",
+    Callback = function()
+        local name = "Default"
+        loadConfig(name)
+    end
+})
+
+ConfigSection:Button({
+    Name = "Delete Config",
+    Callback = function()
+        local name = "Default"
+        deleteConfig(name)
+    end
+})
+
+ConfigSection:Toggle({
+    Name = "Auto Load: Default",
+    Flag = "AutoLoadDefault",
+    Default = false,
+    Callback = function(Value)
+        if Value then
+            setAutoLoadConfig("Default")
+        else
+            setAutoLoadConfig(nil)
+        end
     end
 })
 
@@ -1651,6 +2402,17 @@ UserInputService.InputBegan:Connect(function(input, processed)
     if processed then return end
     if input.KeyCode == Settings.Misc.MenuKeybind then
         Library:Toggle()
+        if Settings.Misc.UnlockMouseOnMenu then
+            menuOpen = not menuOpen
+            if menuOpen then
+                savedMouseState = UserInputService.MouseIconEnabled
+                UserInputService.MouseIconEnabled = true
+            else
+                if savedMouseState ~= nil then
+                    UserInputService.MouseIconEnabled = savedMouseState
+                end
+            end
+        end
     end
     if input == Settings.Aim.Keybind then
         isAming = true
@@ -1668,24 +2430,32 @@ UserInputService.InputBegan:Connect(function(input, processed)
         constantFling = false
         orbitTarget = false
         spinTroll = false
+        headSit = false
         clearFlingForce()
         clearOrbit()
         clearSpinTroll()
+        clearHeadSit()
+        showBindToggleToast("Panic", false)
     end
     if input.KeyCode == Settings.Binds.AimToggle then
         aimbotOn = not aimbotOn
+        showBindToggleToast("Aimbot", aimbotOn)
     end
     if input.KeyCode == Settings.Binds.NoclipToggle then
         noclipOn = not noclipOn
+        showBindToggleToast("Noclip", noclipOn)
     end
     if input.KeyCode == Settings.Binds.FlyToggle then
         flyOn = not flyOn
+        showBindToggleToast("Fly", flyOn)
     end
     if input.KeyCode == Settings.Binds.EspToggle then
         espEnabled = not espEnabled
+        showBindToggleToast("ESP", espEnabled)
     end
     if input.KeyCode == Settings.Binds.TriggerbotToggle then
         triggerbotOn = not triggerbotOn
+        showBindToggleToast("Triggerbot", triggerbotOn)
     end
 end)
 
