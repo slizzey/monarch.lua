@@ -181,16 +181,16 @@ local Library do
 
     local Themes = {
         ["Preset"] = {
-            ["AccentGradient"] = FromRGB(100, 200, 255),  -- Brighter cyan accent (Orca-like)
-            ["Background 2"] = FromRGB(8, 8, 10),         -- Deep black-gray
-            ["Background"] = FromRGB(10, 10, 12),          -- Main near-black background
-            ["Text"] = FromRGB(255, 255, 255),             -- Pure white text
-            ["Outline"] = FromRGB(30, 30, 35),             -- Subtle outline
-            ["Section Top"] = FromRGB(20, 20, 24),          -- Darker section header
-            ["Section Background"] = FromRGB(8, 8, 10),     -- Deep black section background
-            ["Section Background 2"] = FromRGB(12, 12, 15),  -- Alternate section
-            ["Accent"] = FromRGB(80, 180, 255),             -- Cyan accent
-            ["Element"] = FromRGB(18, 18, 22)              -- Deep gray for UI elements
+            ["AccentGradient"] = FromRGB(0, 195, 255),   -- Slightly deeper blue accent
+            ["Background 2"] = FromRGB(10, 10, 12),      -- Very dark gray
+            ["Background"] = FromRGB(12, 12, 14),        -- Main near-black background
+            ["Text"] = FromRGB(235, 235, 235),           -- Slightly dimmed light text
+            ["Outline"] = FromRGB(25, 25, 28),           -- Subtle outline, almost invisible
+            ["Section Top"] = FromRGB(28, 27, 31),       -- Dark section header
+            ["Section Background"] = FromRGB(10, 10, 12),-- Deep black section background
+            ["Section Background 2"] = FromRGB(14, 14, 16),-- Alternate section, minimal difference
+            ["Accent"] = FromRGB(0, 116, 224),           -- Darker blue accent for consistency
+            ["Element"] = FromRGB(16, 16, 18)            -- Deep gray for UI elements
         }
     }
 
@@ -2291,12 +2291,6 @@ local Library do
                     BackgroundColor3 = FromRGB(27, 25, 29)
                 })  Items["MainFrame"]:AddToTheme({BackgroundColor3 = "Background"})
 
-                Instances:Create("UICorner", {
-                    Parent = Items["MainFrame"].Instance,
-                    Name = "\0",
-                    CornerRadius = UDimNew(0, 16)
-                })
-
                 if IsMobile then 
                     Instances:Create("UIScale", {
                         Parent = Items["MainFrame"].Instance,
@@ -2618,9 +2612,15 @@ local Library do
                 })
 
                 Instances:Create("UICorner", {
+                    Parent = Items["MainFrame"].Instance,
+                    Name = "\0",
+                    CornerRadius = UDimNew(0, 4)
+                })      
+
+                Instances:Create("UICorner", {
                     Parent = Items["LeftTabs"].Instance,
                     Name = "\0",
-                    CornerRadius = UDimNew(0, 12)
+                    CornerRadius = UDimNew(0, 4)
                 })      
                 
                 do
@@ -4514,7 +4514,7 @@ local Library do
                 Instances:Create("UICorner", {
                     Parent = Items["TopBackground"].Instance,
                     Name = "\0",
-                    CornerRadius = UDimNew(0, 8)
+                    CornerRadius = UDimNew(0, 4)
                 })
                 
                 Items["Title"] = Instances:Create("TextLabel", {
@@ -4588,7 +4588,7 @@ local Library do
                 Instances:Create("UICorner", {
                     Parent = Items["Top"].Instance,
                     Name = "\0",
-                    CornerRadius = UDimNew(0, 8)
+                    CornerRadius = UDimNew(0, 4)
                 })
                 
                 Items["Fill"] = Instances:Create("Frame", {
@@ -4702,7 +4702,7 @@ local Library do
                 Instances:Create("UICorner", {
                     Parent = Items["Section"].Instance,
                     Name = "\0",
-                    CornerRadius = UDimNew(0, 12)
+                    CornerRadius = UDimNew(0, 4)
                 })
                 
                 Items["Background"] = Instances:Create("Frame", {
@@ -5379,13 +5379,13 @@ local Library do
                 Instances:Create("UICorner", {
                     Parent = Items["Accent"].Instance,
                     Name = "\0",
-                    CornerRadius = UDimNew(0, 6)
+                    CornerRadius = UDimNew(0, 4)
                 })
-
+                
                 Instances:Create("UICorner", {
                     Parent = Items["Button"].Instance,
                     Name = "\0",
-                    CornerRadius = UDimNew(0, 8)
+                    CornerRadius = UDimNew(0, 4)
                 })
                 
                 Items["Text"] = Instances:Create("TextLabel", {
@@ -5485,7 +5485,6 @@ local Library do
                 Max = Data.Max or Data.max or 100,
                 Suffix = Data.Suffix or Data.suffix or "",
                 Decimals = Data.Decimals or Data.decimals or 1,
-                Step = Data.Step or Data.step or (Data.Decimals and (10 ^ -Data.Decimals) or 1),
                 Callback = Data.Callback or Data.callback or function() end,
 
                 Value = 0,
@@ -5540,8 +5539,7 @@ local Library do
 
                 Instances:Create("UICorner", {
                     Parent = Items["RealSlider"].Instance,
-                    Name = "\0",
-                    CornerRadius = UDimNew(0, 4)
+                    Name = "\0"
                 })
 
                 Items["Accent"] = Instances:Create("Frame", {
@@ -5675,41 +5673,29 @@ local Library do
             end
 
             function Slider:Set(Value)
-                local clampedValue = MathClamp(Value, Slider.Min, Slider.Max)
-                -- Snap to step increments with better precision handling
-                local stepInverse = 1 / Slider.Step
-                local steppedValue = MathFloor((clampedValue - Slider.Min) * stepInverse + 0.5) / stepInverse + Slider.Min
-                -- Ensure we don't exceed bounds due to floating point errors
-                if steppedValue > Slider.Max then steppedValue = Slider.Max end
-                if steppedValue < Slider.Min then steppedValue = Slider.Min end
-                Slider.Value = steppedValue
+                Slider.Value = Library:Round(MathClamp(Value, Slider.Min, Slider.Max), Slider.Decimals)
                 Library.Flags[Slider.Flag] = Slider.Value
 
-                -- Calculate percent based on stepped value for visual snapping
-                local percent = (Slider.Value - Slider.Min) / (Slider.Max - Slider.Min)
-                -- Instant update - no tween to show clear step snapping
-                Items["Accent"].Instance.Size = UDim2New(percent, 0, 1, 0)
-                -- Format value to ensure proper decimal display
-                local displayValue = string.format("%." .. Slider.Decimals .. "f", Slider.Value)
-                Items["Value"].Instance.Text = displayValue .. Slider.Suffix
+                Items["Accent"]:Tween(TweenInfo.new(Library.Tween.Time, Enum.EasingStyle.Quart, Enum.EasingDirection.Out), {Size = UDim2New((Slider.Value - Slider.Min) / (Slider.Max - Slider.Min), 0, 1, 0)})
+                Items["Value"].Instance.Text = StringFormat("%s%s", Slider.Value, Slider.Suffix)
 
-                if Slider.Value >= Slider.Max then
+                if Slider.Value >= Slider.Max then 
                     Items["Icon"].Instance.Position = UDim2New(1, -5, 0.5, 0)
                 else
                     Items["Icon"].Instance.Position = UDim2New(1, 5, 0.5, 0)
                 end
 
-                if Slider.Callback then
+                if Slider.Callback then 
                     Library:SafeCall(Slider.Callback, Slider.Value)
                 end
             end
 
             Items["Plus"]:Connect("MouseButton1Down", function()
-                Slider:Set(Slider.Value + Slider.Step)
+                Slider:Set(Slider.Value + Slider.Decimals)
             end)
 
             Items["Minus"]:Connect("MouseButton1Down", function()
-                Slider:Set(Slider.Value - Slider.Step)
+                Slider:Set(Slider.Value - Slider.Decimals)
             end)
 
             local InputChanged 
