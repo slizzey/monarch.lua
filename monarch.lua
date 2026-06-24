@@ -2389,12 +2389,23 @@ AimExtraSection:Label("Crosshair Color"):Colorpicker({
 local VisualPage = Window:Page({Name = "Visual"})
 local ESPSection = VisualPage:Section({Name = "Main", Side = 1})
 
-ESPSection:Toggle({
+local ESPToggle = ESPSection:Toggle({
     Name = "Enable ESP",
     Flag = "ESPEnabled",
     Default = false,
     Callback = function(Value)
         ESPState.enabled = Value
+    end
+})
+
+local ESPSettings = ESPToggle:Settings(60)
+ESPSettings:Label("ESP Color"):Colorpicker({
+    Name = "ESP Color",
+    Flag = "ESPColor",
+    Default = Color3.fromRGB(100, 60, 180),
+    Callback = function(Value)
+        ESPState.espColor = Value
+        refreshChams()
     end
 })
 
@@ -2411,12 +2422,63 @@ ESPSection:Toggle({
     end
 })
 
-ESPSection:Toggle({
+local ChamsToggle = ESPSection:Toggle({
     Name = "Chams",
     Flag = "ChamsEnabled",
     Default = false,
     Callback = function(Value)
         ESPState.chamsEnabled = Value
+        refreshChams()
+    end
+})
+
+local ChamsSettings = ChamsToggle:Settings(140)
+ChamsSettings:Label("Chams Fill Color"):Colorpicker({
+    Name = "Chams Fill Color",
+    Flag = "ChamsFillColor",
+    Default = Color3.fromRGB(100, 60, 180),
+    Callback = function(Value)
+        ESPState.chamsFillColor = Value
+        refreshChams()
+    end
+})
+
+ChamsSettings:Label("Chams Outline Color"):Colorpicker({
+    Name = "Chams Outline Color",
+    Flag = "ChamsOutlineColor",
+    Default = Color3.fromRGB(100, 60, 180),
+    Callback = function(Value)
+        ESPState.chamsOutlineColor = Value
+        refreshChams()
+    end
+})
+
+ChamsSettings:Slider({
+    Name = "Chams Fill Transparency",
+    Flag = "ChamsFillTransparency",
+    Min = 0,
+    Max = 1,
+    Default = 0.5,
+    Suffix = "",
+    Step = 0.1,
+    Decimals = 1,
+    Callback = function(Value)
+        ESPState.chamsFillTransparency = Value
+        refreshChams()
+    end
+})
+
+ChamsSettings:Slider({
+    Name = "Chams Outline Transparency",
+    Flag = "ChamsOutlineTransparency",
+    Min = 0,
+    Max = 1,
+    Default = 0,
+    Suffix = "",
+    Step = 0.1,
+    Decimals = 1,
+    Callback = function(Value)
+        ESPState.chamsOutlineTransparency = Value
         refreshChams()
     end
 })
@@ -2466,66 +2528,6 @@ ESPSection:Toggle({
     end
 })
 
-ESPSection:Label("ESP Color"):Colorpicker({
-    Name = "ESP Color",
-    Flag = "ESPColor",
-    Default = Color3.fromRGB(100, 60, 180),
-    Callback = function(Value)
-        ESPState.espColor = Value
-        refreshChams()
-    end
-})
-
-ESPSection:Label("Chams Fill Color"):Colorpicker({
-    Name = "Chams Fill Color",
-    Flag = "ChamsFillColor",
-    Default = Color3.fromRGB(100, 60, 180),
-    Callback = function(Value)
-        ESPState.chamsFillColor = Value
-        refreshChams()
-    end
-})
-
-ESPSection:Label("Chams Outline Color"):Colorpicker({
-    Name = "Chams Outline Color",
-    Flag = "ChamsOutlineColor",
-    Default = Color3.fromRGB(100, 60, 180),
-    Callback = function(Value)
-        ESPState.chamsOutlineColor = Value
-        refreshChams()
-    end
-})
-
-ESPSection:Slider({
-    Name = "Chams Fill Transparency",
-    Flag = "ChamsFillTransparency",
-    Min = 0,
-    Max = 1,
-    Default = 0.5,
-    Suffix = "",
-    Step = 0.1,
-    Decimals = 1,
-    Callback = function(Value)
-        ESPState.chamsFillTransparency = Value
-        refreshChams()
-    end
-})
-
-ESPSection:Slider({
-    Name = "Chams Outline Transparency",
-    Flag = "ChamsOutlineTransparency",
-    Min = 0,
-    Max = 1,
-    Default = 0,
-    Suffix = "",
-    Step = 0.1,
-    Decimals = 1,
-    Callback = function(Value)
-        ESPState.chamsOutlineTransparency = Value
-        refreshChams()
-    end
-})
-
 local VisualExtraSection = VisualPage:Section({Name = "Visuals", Side = 2})
 
 VisualExtraSection:Toggle({
@@ -2551,7 +2553,7 @@ VisualExtraSection:Toggle({
     end
 })
 
-VisualExtraSection:Toggle({
+local FogToggle = VisualExtraSection:Toggle({
     Name = "Atmospheric Fog",
     Flag = "AtmosphericFog",
     Default = false,
@@ -2560,6 +2562,21 @@ VisualExtraSection:Toggle({
             enableAtmosphericFog()
         else
             disableAtmosphericFog()
+        end
+    end
+})
+
+local FogSettings = FogToggle:Settings(60)
+FogSettings:Label("Fog Color"):Colorpicker({
+    Name = "Fog Color",
+    Flag = "AtmosphericFogColor",
+    Default = Color3.fromRGB(185, 195, 210),
+    Callback = function(Value)
+        MiscState.atmosphericFogColor = Value
+        if MiscState.atmosphericFog and atmosphericFogInstance then
+            atmosphericFogInstance.Color = Value
+            atmosphericFogInstance.Decay = Value
+            Lighting.FogColor = Value
         end
     end
 })
@@ -2593,20 +2610,6 @@ VisualExtraSection:Slider({
     end
 })
 
-VisualExtraSection:Label("Fog Color"):Colorpicker({
-    Name = "Fog Color",
-    Flag = "AtmosphericFogColor",
-    Default = Color3.fromRGB(185, 195, 210),
-    Callback = function(Value)
-        MiscState.atmosphericFogColor = Value
-        if MiscState.atmosphericFog and atmosphericFogInstance then
-            atmosphericFogInstance.Color = Value
-            atmosphericFogInstance.Decay = Value
-            Lighting.FogColor = Value
-        end
-    end
-})
-
 local BloomToggle = VisualExtraSection:Toggle({
     Name = "Bloom",
     Flag = "BloomEnabled",
@@ -2617,7 +2620,7 @@ local BloomToggle = VisualExtraSection:Toggle({
     end
 })
 
-local BloomSettings = BloomToggle:Settings(150)
+local BloomSettings = BloomToggle:Settings(120)
 BloomSettings:Slider({
     Name = "Intensity",
     Flag = "BloomIntensity",
@@ -2672,7 +2675,7 @@ local ColorCorrectionToggle = VisualExtraSection:Toggle({
     end
 })
 
-local ColorCorrectionSettings = ColorCorrectionToggle:Settings(150)
+local ColorCorrectionSettings = ColorCorrectionToggle:Settings(120)
 ColorCorrectionSettings:Slider({
     Name = "Contrast",
     Flag = "ColorContrast",
@@ -2723,7 +2726,7 @@ local SunRaysToggle = VisualExtraSection:Toggle({
     end
 })
 
-local SunRaysSettings = SunRaysToggle:Settings(100)
+local SunRaysSettings = SunRaysToggle:Settings(80)
 SunRaysSettings:Slider({
     Name = "Intensity",
     Flag = "SunRaysIntensity",
@@ -2764,7 +2767,7 @@ local DOFToggle = VisualExtraSection:Toggle({
     end
 })
 
-local DOFSettings = DOFToggle:Settings(200)
+local DOFSettings = DOFToggle:Settings(150)
 DOFSettings:Slider({
     Name = "Far Intensity",
     Flag = "DOFFarIntensity",
@@ -2863,7 +2866,7 @@ local WalkSpeedToggle = MoveSection:Toggle({
     end
 })
 
-local WalkSpeedSettings = WalkSpeedToggle:Settings(80)
+local WalkSpeedSettings = WalkSpeedToggle:Settings(60)
 WalkSpeedSettings:Slider({
     Name = "Speed",
     Flag = "SpeedValue",
@@ -2885,7 +2888,7 @@ local JumpHeightToggle = MoveSection:Toggle({
     end
 })
 
-local JumpHeightSettings = JumpHeightToggle:Settings(80)
+local JumpHeightSettings = JumpHeightToggle:Settings(60)
 JumpHeightSettings:Slider({
     Name = "Height",
     Flag = "JumpValue",
@@ -2932,7 +2935,7 @@ local FlyToggle = MoveSection:Toggle({
     end
 })
 
-local FlySettings = FlyToggle:Settings(80)
+local FlySettings = FlyToggle:Settings(60)
 FlySettings:Slider({
     Name = "Fly Speed",
     Flag = "FlySpeed",
@@ -2954,7 +2957,7 @@ MoveSection:Toggle({
     end
 })
 
-MoveSection:Toggle({
+local GravityToggle = MoveSection:Toggle({
     Name = "Custom Gravity",
     Flag = "GravityEnabled",
     Default = false,
@@ -2964,7 +2967,8 @@ MoveSection:Toggle({
     end
 })
 
-MoveSection:Slider({
+local GravitySettings = GravityToggle:Settings(60)
+GravitySettings:Slider({
     Name = "Gravity Value",
     Flag = "GravityValue",
     Min = 0,
