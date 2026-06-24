@@ -234,6 +234,7 @@ local MovementState = {
     shieldOn = false,
     forceField = nil,
     currentSpeed = 16,
+    speedEnabled = false,
     infJumpOn = false,
     noclipOn = false,
     flyOn = false,
@@ -1026,7 +1027,13 @@ end
 
 RunService.Heartbeat:Connect(function()
     local hum = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid")
-    if hum then hum.WalkSpeed = MovementState.currentSpeed end
+    if hum then 
+        if MovementState.speedEnabled then
+            hum.WalkSpeed = MovementState.currentSpeed
+        else
+            hum.WalkSpeed = 16
+        end
+    end
 end)
 
 UserInputService.JumpRequest:Connect(function()
@@ -1036,7 +1043,11 @@ UserInputService.JumpRequest:Connect(function()
     local hum = char:FindFirstChild("Humanoid")
     local root = char:FindFirstChild("HumanoidRootPart")
     if hum and root and hum.Health > 0 then
-        hum.JumpPower = MovementState.jumpValue
+        if MovementState.jumpEnabled then
+            hum.JumpPower = MovementState.jumpValue
+        else
+            hum.JumpPower = 50
+        end
         root.Velocity = Vector3.new(root.Velocity.X, MovementState.jumpValue, root.Velocity.Z)
     end
 end)
@@ -1094,7 +1105,11 @@ end)
 LocalPlayer.CharacterAdded:Connect(function(newChar)
     task.wait(0.5)
     local hum = newChar:WaitForChild("Humanoid")
-    hum.WalkSpeed = MovementState.currentSpeed
+    if MovementState.speedEnabled then
+        hum.WalkSpeed = MovementState.currentSpeed
+    else
+        hum.WalkSpeed = 16
+    end
     if MovementState.shieldOn then
         MovementState.forceField = Instance.new("ForceField")
         MovementState.forceField.Parent = newChar
@@ -1757,16 +1772,16 @@ MoveSection:Toggle({
 })
 
 MoveSection:Toggle({
-    Name = "Speed Hack",
+    Name = "Walk Speed",
     Flag = "SpeedEnabled",
     Default = false,
     Callback = function(Value)
-        Settings.Movement.SpeedEnabled = Value
+        MovementState.speedEnabled = Value
     end
 })
 
 MoveSection:Slider({
-    Name = "Walk Speed",
+    Name = "Speed",
     Flag = "SpeedValue",
     Min = 16,
     Max = 250,
@@ -1787,7 +1802,7 @@ MoveSection:Toggle({
 })
 
 MoveSection:Slider({
-    Name = "Jump Power",
+    Name = "Height",
     Flag = "JumpValue",
     Min = 7,
     Max = 500,
