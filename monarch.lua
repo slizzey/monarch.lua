@@ -2415,7 +2415,27 @@ EmoteSection:Toggle({
             EmoteState.emoteWheelLoaded = true
             -- Load emote wheel system from local file
             local success, err = pcall(function()
-                local emoteWheelCode = readfile("monarch.lua/emote_wheel.lua")
+                local emoteWheelCode
+                -- Try multiple possible paths
+                local paths = {
+                    "emote_wheel.lua",
+                    "./emote_wheel.lua",
+                    "monarch.lua/emote_wheel.lua",
+                    "./monarch.lua/emote_wheel.lua"
+                }
+                
+                for _, path in ipairs(paths) do
+                    local success, content = pcall(readfile, path)
+                    if success and content then
+                        emoteWheelCode = content
+                        break
+                    end
+                end
+                
+                if not emoteWheelCode then
+                    error("Could not find emote_wheel.lua in any location")
+                end
+                
                 local func, loadErr = loadstring(emoteWheelCode)
                 if not func then
                     error("Loadstring error: " .. tostring(loadErr))
