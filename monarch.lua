@@ -2416,10 +2416,19 @@ EmoteSection:Toggle({
             -- Load emote wheel system from local file
             local success, err = pcall(function()
                 local emoteWheelCode = readfile("emote_wheel.lua")
-                loadstring(emoteWheelCode)()
+                local func, loadErr = loadstring(emoteWheelCode)
+                if not func then
+                    error("Loadstring error: " .. tostring(loadErr))
+                end
+                func()
             end)
             if not success then
                 warn("Failed to load emote wheel: " .. tostring(err))
+                Library:Notification({
+                    Title = "Emote Wheel Error",
+                    Description = tostring(err),
+                    Icon = "71408678974152"
+                })
             else
                 -- Show notification with keybind
                 Library:Notification({
