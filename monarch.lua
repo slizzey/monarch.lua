@@ -2401,76 +2401,31 @@ AvatarSection:Button({
 local EmoteSection = AvatarPage:Section({Name = "Emote", Side = 2})
 
 local EmoteState = {
-    wheelVisible = false,
-    emotes = {}
+    enabled = false,
+    emoteWheelLoaded = false
 }
 
-local UserInputService = game:GetService("UserInputService")
-
--- Get default Roblox emotes
-local function loadDefaultEmotes()
-    local emoteList = {
-        {name = "Wave", id = "rbxassetid://507770453"},
-        {name = "Cheer", id = "rbxassetid://507770647"},
-        {name = "Clap", id = "rbxassetid://507770019"},
-        {name = "Laugh", id = "rbxassetid://507770239"},
-        {name = "Dance", id = "rbxassetid://507770339"},
-        {name = "Point", id = "rbxassetid://507770159"},
-        {name = "Shrug", id = "rbxassetid://507770180"},
-        {name = "Jump", id = "rbxassetid://507770653"},
-    }
-    EmoteState.emotes = emoteList
-end
-
-loadDefaultEmotes()
-
 EmoteSection:Toggle({
-    Name = "Show Emote Wheel",
+    Name = "Enable Emote Wheel",
     Flag = "EmoteWheelEnabled",
     Default = false,
     Callback = function(Value)
-        EmoteState.wheelVisible = Value
-        -- Toggle Roblox emotes menu
-        local StarterGui = game:GetService("StarterGui")
-        pcall(function()
-            StarterGui:SetCoreGuiEnabled(Enum.CoreGuiType.EmotesMenu, Value)
-        end)
+        EmoteState.enabled = Value
+        if Value and not EmoteState.emoteWheelLoaded then
+            EmoteState.emoteWheelLoaded = true
+            -- Load emote wheel system from local file
+            local success, err = pcall(function()
+                local emoteWheelCode = readfile("emote_wheel.lua")
+                loadstring(emoteWheelCode)()
+            end)
+            if not success then
+                warn("Failed to load emote wheel: " .. tostring(err))
+            end
+        end
     end
 })
 
-EmoteSection:Label("Quick Emotes")
-
-for i, emote in ipairs(EmoteState.emotes) do
-    EmoteSection:Button({
-        Name = emote.name,
-        Callback = function()
-            local character = LocalPlayer.Character
-            if not character then return end
-
-            local humanoid = character:FindFirstChild("Humanoid")
-            if not humanoid then return end
-
-            local animator = humanoid:FindFirstChildOfClass("Animator")
-            if not animator then
-                animator = Instance.new("Animator")
-                animator.Parent = humanoid
-            end
-
-            -- Stop current emote
-            for _, track in pairs(animator:GetPlayingAnimationTracks()) do
-                if track.Priority == Enum.AnimationPriority.Core then
-                    track:Stop()
-                end
-            end
-
-            -- Play new emote
-            local animation = Instance.new("Animation")
-            animation.AnimationId = emote.id
-            local track = animator:LoadAnimation(animation)
-            track:Play()
-        end
-    })
-end
+EmoteSection:Label("Press '.' to open emote wheel")
 
 local MiscPage = Window:Page({Name = "Misc"})
 local MiscSection = MiscPage:Section({Name = "Misc", Side = 1})
