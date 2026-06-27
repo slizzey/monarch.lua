@@ -2346,29 +2346,32 @@ local WaypointToggle = MiscSection:Toggle({
 
 local WaypointSettings = WaypointToggle:Settings()
 
+local pendingWaypointName = ""
+
+WaypointSettings:Input({
+    Name = "Waypoint Name",
+    Placeholder = "Enter name...",
+    Callback = function(Value)
+        pendingWaypointName = Value or ""
+    end
+})
+
 WaypointSettings:Button({
-    Name = "Add Waypoint",
+    Name = "+",
     Callback = function()
+        if pendingWaypointName == "" then return end
+
         local character = LocalPlayer.Character
         local rootPart = character and character:FindFirstChild("HumanoidRootPart")
         if not rootPart then return end
 
-        local waypointId = #WaypointState.waypoints + 1
-        WaypointState.waypoints[waypointId] = {
+        table.insert(WaypointState.waypoints, {
             position = rootPart.Position,
-            name = "Waypoint " .. waypointId,
+            name = pendingWaypointName,
             color = Color3.fromRGB(100, 60, 180)
-        }
-    end
-})
+        })
 
-WaypointSettings:Input({
-    Name = "Rename Last",
-    Placeholder = "Enter name...",
-    Callback = function(Value)
-        if #WaypointState.waypoints > 0 and Value and Value ~= "" then
-            WaypointState.waypoints[#WaypointState.waypoints].name = Value
-        end
+        pendingWaypointName = ""
     end
 })
 
@@ -2421,6 +2424,56 @@ local function worldToScreen(position)
     return Vector2.new(0, 0), false
 end
 
+local function createWaypointDrawings()
+    return {
+        Text = Drawing.new("Text"),
+        Line = Drawing.new("Line"),
+        Dot = Drawing.new("Circle")
+    }
+end
+
+local function configureTextDrawing(text, waypoint, screenPos, distance)
+    text.Visible = true
+    text.Position = screenPos + Vector2.new(0, -20)
+    text.Color = waypoint.color
+    text.Size = 14
+    text.Center = true
+    text.Outline = true
+    text.OutlineColor = Color3.new(0, 0, 0)
+    text.Text = WaypointState.showDistance and (waypoint.name .. " [" .. math.floor(distance) .. " studs]") or waypoint.name
+end
+
+local function configureLineDrawing(line, from, to, color)
+    line.Visible = true
+    line.From = from
+    line.To = to
+    line.Color = color
+    line.Thickness = 1
+    line.Transparency = 0.5
+end
+
+local function configureDotDrawing(dot, screenPos, color)
+    dot.Visible = true
+    dot.Position = screenPos
+    dot.Color = color
+    dot.Radius = 4
+    dot.Filled = true
+    dot.Thickness = 1
+end
+
+local function hideDrawings(drawings)
+    drawings.Text.Visible = false
+    drawings.Line.Visible = false
+    drawings.Dot.Visible = false
+end
+
+local function cleanupDrawings(id, drawings)
+    if drawings.Text then drawings.Text:Remove() end
+    if drawings.Line then drawings.Line:Remove() end
+    if drawings.Dot then drawings.Dot:Remove() end
+    WaypointState.drawings[id] = nil
+end
+
 local function updateWaypoints()
     if not WaypointState.enabled then return end
 
@@ -2432,40 +2485,20 @@ local function updateWaypoints()
 
     for id, waypoint in pairs(WaypointState.waypoints) do
         if not WaypointState.drawings[id] then
-            WaypointState.drawings[id] = {
-                Text = Drawing.new("Text"),
-                Line = Drawing.new("Line"),
-                Dot = Drawing.new("Circle")
-            }
+            WaypointState.drawings[id] = createWaypointDrawings()
         end
 
         local drawings = WaypointState.drawings[id]
         local screenPos, onScreen = worldToScreen(waypoint.position)
 
         if onScreen then
-            drawings.Text.Visible = true
-            drawings.Text.Position = screenPos + Vector2.new(0, -20)
-            drawings.Text.Text = waypoint.name
-            drawings.Text.Color = waypoint.color
-            drawings.Text.Size = 14
-            drawings.Text.Center = true
-            drawings.Text.Outline = true
-            drawings.Text.OutlineColor = Color3.new(0, 0, 0)
-
             local distance = (waypoint.position - playerPos).Magnitude
-            if WaypointState.showDistance then
-                drawings.Text.Text = waypoint.name .. " [" .. math.floor(distance) .. " studs]"
-            end
+            configureTextDrawing(drawings.Text, waypoint, screenPos, distance)
 
             if WaypointState.showDirection then
                 local playerScreenPos, playerOnScreen = worldToScreen(playerPos)
                 if playerOnScreen then
-                    drawings.Line.Visible = true
-                    drawings.Line.From = playerScreenPos
-                    drawings.Line.To = screenPos
-                    drawings.Line.Color = waypoint.color
-                    drawings.Line.Thickness = 1
-                    drawings.Line.Transparency = 0.5
+                    configureLineDrawing(drawings.Line, playerScreenPos, screenPos, waypoint.color)
                 else
                     drawings.Line.Visible = false
                 end
@@ -2473,33 +2506,20 @@ local function updateWaypoints()
                 drawings.Line.Visible = false
             end
 
-            drawings.Dot.Visible = true
-            drawings.Dot.Position = screenPos
-            drawings.Dot.Color = waypoint.color
-            drawings.Dot.Radius = 4
-            drawings.Dot.Filled = true
-            drawings.Dot.Thickness = 1
+            configureDotDrawing(drawings.Dot, screenPos, waypoint.color)
         else
-            drawings.Text.Visible = false
-            drawings.Line.Visible = false
-            drawings.Dot.Visible = false
+            hideDrawings(drawings)
         end
     end
 
-    -- Clean up drawings for deleted waypoints
     for id, drawings in pairs(WaypointState.drawings) do
         if not WaypointState.waypoints[id] then
-            if drawings.Text then drawings.Text:Remove() end
-            if drawings.Line then drawings.Line:Remove() end
-            if drawings.Dot then drawings.Dot:Remove() end
-            WaypointState.drawings[id] = nil
+            cleanupDrawings(id, drawings)
         end
     end
 end
 
-RunService.RenderStepped:Connect(function()
-    updateWaypoints()
-end)
+RunService.RenderStepped:Connect(updateWaypoints)
 
 UserInputService.InputBegan:Connect(function(input, processed)
     if processed then return end

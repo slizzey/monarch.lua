@@ -3074,15 +3074,14 @@ local Library do
         
                         Debounce = true 
         
-                        if Settings.IsOpen then 
+                        if Settings.IsOpen then
                             for Index, Value in Settings.Elements do
                                 Value:RefreshPosition(true)
-                                task.wait(0.03)
                             end
-    
+
                             SettingsItems["Settings"].Instance.Visible = true
                             SettingsItems["Settings"].Instance.Parent = Library.Holder.Instance
-                            
+
                             RenderStepped = RunService.RenderStepped:Connect(function()
                                 SettingsItems["Settings"].Instance.Position = UDim2New(0, Items["SettingsIcon"].Instance.AbsolutePosition.X, 0, Items["SettingsIcon"].Instance.AbsolutePosition.Y + Items["SettingsButton"].Instance.AbsoluteSize.Y + 108)
                                 SettingsItems["Settings"].Instance.Size = UDim2New(0, 325, 0, 230)
@@ -5164,12 +5163,9 @@ local Library do
                     Debounce = true 
     
                     if Settings.IsOpen then
-                        task.spawn(function()
-                            for Index, Value in Settings.Elements do
-                                Value:RefreshPosition(true)
-                                task.wait(0.03)
-                            end
-                        end)
+                        for Index, Value in Settings.Elements do
+                            Value:RefreshPosition(true)
+                        end
 
                         SettingsItem["Settings"].Instance.Visible = true
                         SettingsItem["Settings"].Instance.Parent = Library.Holder.Instance
