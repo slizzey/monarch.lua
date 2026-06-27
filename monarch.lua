@@ -2413,9 +2413,42 @@ EmoteSection:Toggle({
         EmoteState.enabled = Value
         if Value and not EmoteState.emoteWheelLoaded then
             EmoteState.emoteWheelLoaded = true
-            -- Load emote wheel system from URL
+            -- Load emote wheel system - try multiple methods
             local success, err = pcall(function()
-                local emoteWheelCode = game:HttpGet("https://raw.githubusercontent.com/7yd7/Hub/refs/heads/Branch/GUIS/EmoteWheel.lua")
+                local emoteWheelCode
+                
+                -- Method 1: Try readfile with various paths
+                local paths = {
+                    "emote_wheel.lua",
+                    [[emote_wheel.lua]],
+                    [[.\emote_wheel.lua]],
+                    [[./emote_wheel.lua]],
+                    [[monarch.lua\emote_wheel.lua]],
+                    [[monarch.lua/emote_wheel.lua]]
+                }
+                
+                for _, path in ipairs(paths) do
+                    local ok, content = pcall(function() return readfile(path) end)
+                    if ok and content and content ~= "" then
+                        emoteWheelCode = content
+                        break
+                    end
+                end
+                
+                -- Method 2: If local file fails, try HTTP
+                if not emoteWheelCode then
+                    local ok, content = pcall(function()
+                        return game:HttpGet("https://raw.githubusercontent.com/7yd7/Hub/refs/heads/Branch/GUIS/EmoteWheel.lua")
+                    end)
+                    if ok and content then
+                        emoteWheelCode = content
+                    end
+                end
+                
+                if not emoteWheelCode then
+                    error("Failed to load emote wheel from both local file and URL")
+                end
+                
                 local func, loadErr = loadstring(emoteWheelCode)
                 if not func then
                     error("Loadstring error: " .. tostring(loadErr))
