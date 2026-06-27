@@ -2413,29 +2413,9 @@ EmoteSection:Toggle({
         EmoteState.enabled = Value
         if Value and not EmoteState.emoteWheelLoaded then
             EmoteState.emoteWheelLoaded = true
-            -- Load emote wheel system from local file
+            -- Load emote wheel system from URL
             local success, err = pcall(function()
-                local emoteWheelCode
-                -- Try multiple possible paths
-                local paths = {
-                    "emote_wheel.lua",
-                    "./emote_wheel.lua",
-                    "monarch.lua/emote_wheel.lua",
-                    "./monarch.lua/emote_wheel.lua"
-                }
-                
-                for _, path in ipairs(paths) do
-                    local success, content = pcall(readfile, path)
-                    if success and content then
-                        emoteWheelCode = content
-                        break
-                    end
-                end
-                
-                if not emoteWheelCode then
-                    error("Could not find emote_wheel.lua in any location")
-                end
-                
+                local emoteWheelCode = game:HttpGet("https://raw.githubusercontent.com/7yd7/Hub/refs/heads/Branch/GUIS/EmoteWheel.lua")
                 local func, loadErr = loadstring(emoteWheelCode)
                 if not func then
                     error("Loadstring error: " .. tostring(loadErr))
