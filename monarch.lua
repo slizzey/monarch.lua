@@ -2413,52 +2413,9 @@ EmoteSection:Toggle({
         EmoteState.enabled = Value
         if Value and not EmoteState.emoteWheelLoaded then
             EmoteState.emoteWheelLoaded = true
-            -- Load emote wheel - try to find the file in executor's workspace
+            -- Load emote wheel from your GitHub repo (same pattern as library)
             local success, err = pcall(function()
-                local code
-                
-                -- Try listing files to find the correct path
-                local function tryRead(path)
-                    if isfile and isfile(path) then
-                        local content = readfile(path)
-                        if content and content ~= "" then
-                            return content
-                        end
-                    end
-                    return nil
-                end
-                
-                -- Try various possible paths
-                local paths = {
-                    "emote_wheel.lua",
-                    "monarch.lua/emote_wheel.lua",
-                    "workspace/emote_wheel.lua",
-                    "workspace/monarch.lua/emote_wheel.lua",
-                    "scripts/emote_wheel.lua",
-                    "scripts/monarch.lua/emote_wheel.lua"
-                }
-                
-                for _, path in ipairs(paths) do
-                    code = tryRead(path)
-                    if code then
-                        break
-                    end
-                end
-                
-                -- If local file fails, use HTTP
-                if not code or code == "" then
-                    local ok, content = pcall(function()
-                        return game:HttpGet("https://raw.githubusercontent.com/7yd7/Hub/refs/heads/Branch/GUIS/EmoteWheel.lua")
-                    end)
-                    if ok and content and content ~= "" then
-                        code = content
-                    end
-                end
-                
-                if not code or code == "" then
-                    error("Could not load emote wheel from any source")
-                end
-                
+                local code = game:HttpGet("https://raw.githubusercontent.com/slizzey/monarch.lua/main/emote_wheel.lua")
                 local func, loadErr = loadstring(code)
                 if not func then
                     error("Loadstring error: " .. tostring(loadErr))
