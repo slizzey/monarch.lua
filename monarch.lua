@@ -2420,6 +2420,13 @@ EmoteSection:Toggle({
             end)
             if not success then
                 warn("Failed to load emote wheel: " .. tostring(err))
+            else
+                -- Show notification with keybind
+                Library:Notification({
+                    Title = "Emote Wheel",
+                    Description = "Press '.' to open",
+                    Icon = "71408678974152"
+                })
             end
         end
     end
