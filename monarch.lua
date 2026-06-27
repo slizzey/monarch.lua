@@ -205,6 +205,15 @@ local MiscState = {
 
 local trollTarget = nil
 
+-- Waypoint System
+local WaypointState = {
+    enabled = false,
+    waypoints = {},
+    drawings = {},
+    showDistance = true,
+    showDirection = true,
+}
+
 local originalLighting = {
     Brightness = Lighting.Brightness,
     Ambient = Lighting.Ambient,
@@ -2317,6 +2326,180 @@ MiscSection:Toggle({
         end
     end
 })
+
+local WaypointToggle = MiscSection:Toggle({
+    Name = "Waypoints",
+    Flag = "WaypointsEnabled",
+    Default = false,
+    Callback = function(Value)
+        WaypointState.enabled = Value
+        if not Value then
+            for _, drawing in pairs(WaypointState.drawings) do
+                if drawing.Text then drawing.Text:Remove() end
+                if drawing.Line then drawing.Line:Remove() end
+                if drawing.Dot then drawing.Dot:Remove() end
+            end
+            WaypointState.drawings = {}
+        end
+    end
+})
+
+local WaypointSettings = WaypointToggle:Settings()
+
+WaypointSettings:Button({
+    Name = "Add Waypoint",
+    Callback = function()
+        local character = LocalPlayer.Character
+        local rootPart = character and character:FindFirstChild("HumanoidRootPart")
+        if not rootPart then return end
+
+        local waypointId = #WaypointState.waypoints + 1
+        WaypointState.waypoints[waypointId] = {
+            position = rootPart.Position,
+            name = "Waypoint " .. waypointId,
+            color = Color3.fromRGB(100, 60, 180)
+        }
+    end
+})
+
+WaypointSettings:Input({
+    Name = "Rename Last",
+    Placeholder = "Enter name...",
+    Callback = function(Value)
+        if #WaypointState.waypoints > 0 and Value and Value ~= "" then
+            WaypointState.waypoints[#WaypointState.waypoints].name = Value
+        end
+    end
+})
+
+WaypointSettings:Button({
+    Name = "Delete Last",
+    Callback = function()
+        if #WaypointState.waypoints > 0 then
+            table.remove(WaypointState.waypoints)
+        end
+    end
+})
+
+WaypointSettings:Button({
+    Name = "Clear All",
+    Callback = function()
+        WaypointState.waypoints = {}
+        for _, drawing in pairs(WaypointState.drawings) do
+            if drawing.Text then drawing.Text:Remove() end
+            if drawing.Line then drawing.Line:Remove() end
+            if drawing.Dot then drawing.Dot:Remove() end
+        end
+        WaypointState.drawings = {}
+    end
+})
+
+WaypointSettings:Toggle({
+    Name = "Show Distance",
+    Flag = "WaypointShowDistance",
+    Default = true,
+    Callback = function(Value)
+        WaypointState.showDistance = Value
+    end
+})
+
+WaypointSettings:Toggle({
+    Name = "Show Direction",
+    Flag = "WaypointShowDirection",
+    Default = true,
+    Callback = function(Value)
+        WaypointState.showDirection = Value
+    end
+})
+
+-- Waypoint Rendering
+local function worldToScreen(position)
+    local screenPos, onScreen = Camera:WorldToScreenPoint(position)
+    if onScreen then
+        return Vector2.new(screenPos.X, screenPos.Y), true
+    end
+    return Vector2.new(0, 0), false
+end
+
+local function updateWaypoints()
+    if not WaypointState.enabled then return end
+
+    local character = LocalPlayer.Character
+    local rootPart = character and character:FindFirstChild("HumanoidRootPart")
+    if not rootPart then return end
+
+    local playerPos = rootPart.Position
+
+    for id, waypoint in pairs(WaypointState.waypoints) do
+        if not WaypointState.drawings[id] then
+            WaypointState.drawings[id] = {
+                Text = Drawing.new("Text"),
+                Line = Drawing.new("Line"),
+                Dot = Drawing.new("Circle")
+            }
+        end
+
+        local drawings = WaypointState.drawings[id]
+        local screenPos, onScreen = worldToScreen(waypoint.position)
+
+        if onScreen then
+            drawings.Text.Visible = true
+            drawings.Text.Position = screenPos + Vector2.new(0, -20)
+            drawings.Text.Text = waypoint.name
+            drawings.Text.Color = waypoint.color
+            drawings.Text.Size = 14
+            drawings.Text.Center = true
+            drawings.Text.Outline = true
+            drawings.Text.OutlineColor = Color3.new(0, 0, 0)
+
+            local distance = (waypoint.position - playerPos).Magnitude
+            if WaypointState.showDistance then
+                drawings.Text.Text = waypoint.name .. " [" .. math.floor(distance) .. " studs]"
+            end
+
+            if WaypointState.showDirection then
+                local playerScreenPos, playerOnScreen = worldToScreen(playerPos)
+                if playerOnScreen then
+                    drawings.Line.Visible = true
+                    drawings.Line.From = playerScreenPos
+                    drawings.Line.To = screenPos
+                    drawings.Line.Color = waypoint.color
+                    drawings.Line.Thickness = 1
+                    drawings.Line.Transparency = 0.5
+                else
+                    drawings.Line.Visible = false
+                end
+            else
+                drawings.Line.Visible = false
+            end
+
+            drawings.Dot.Visible = true
+            drawings.Dot.Position = screenPos
+            drawings.Dot.Color = waypoint.color
+            drawings.Dot.Radius = 4
+            drawings.Dot.Filled = true
+            drawings.Dot.Thickness = 1
+        else
+            drawings.Text.Visible = false
+            drawings.Line.Visible = false
+            drawings.Dot.Visible = false
+        end
+    end
+
+    -- Clean up drawings for deleted waypoints
+    for id, drawings in pairs(WaypointState.drawings) do
+        if not WaypointState.waypoints[id] then
+            if drawings.Text then drawings.Text:Remove() end
+            if drawings.Line then drawings.Line:Remove() end
+            if drawings.Dot then drawings.Dot:Remove() end
+            WaypointState.drawings[id] = nil
+        end
+    end
+end
+
+RunService.RenderStepped:Connect(function()
+    updateWaypoints()
+end)
 
 UserInputService.InputBegan:Connect(function(input, processed)
     if processed then return end
