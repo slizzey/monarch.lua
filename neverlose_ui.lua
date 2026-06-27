@@ -3237,6 +3237,10 @@ local Library do
 
                 if Window.IsOpen then 
                     Items["MainFrame"].Instance.Visible = true 
+                else
+                    for Index, Value in Library.OpenFrames do 
+                        Value:SetOpen(false)
+                    end
                 end
 
                 local Descendants = Items["MainFrame"].Instance:GetDescendants()
@@ -5148,6 +5152,7 @@ local Library do
                 end
 
                 local Debounce = false
+                local RenderStepped = nil
 
                 function Settings:SetOpen(Bool)
                     if Debounce then 
@@ -5172,6 +5177,12 @@ local Library do
                         local iconPos = Items["SettingsIcon"].Instance.AbsolutePosition
                         local iconSize = Items["SettingsIcon"].Instance.AbsoluteSize
                         SettingsItem["Settings"].Instance.Position = UDim2New(0, iconPos.X - 50, 0, iconPos.Y + iconSize.Y + 12)
+
+                        RenderStepped = RunService.RenderStepped:Connect(function()
+                            local iconPos = Items["SettingsIcon"].Instance.AbsolutePosition
+                            local iconSize = Items["SettingsIcon"].Instance.AbsoluteSize
+                            SettingsItem["Settings"].Instance.Position = UDim2New(0, iconPos.X - 50, 0, iconPos.Y + iconSize.Y + 12)
+                        end)
     
                         for Index, Value in Library.OpenFrames do 
                             if Value ~= Settings then 
@@ -5187,6 +5198,11 @@ local Library do
 
                         if Library.OpenFrames[Settings] then
                             Library.OpenFrames[Settings] = nil
+                        end
+
+                        if RenderStepped then 
+                            RenderStepped:Disconnect()
+                            RenderStepped = nil
                         end
                     end
     
