@@ -2415,7 +2415,7 @@ EmoteSection:Toggle({
             EmoteState.emoteWheelLoaded = true
             -- Load emote wheel system from local file
             local success, err = pcall(function()
-                local emoteWheelCode = readfile("emote_wheel.lua")
+                local emoteWheelCode = readfile("monarch.lua/emote_wheel.lua")
                 local func, loadErr = loadstring(emoteWheelCode)
                 if not func then
                     error("Loadstring error: " .. tostring(loadErr))
