@@ -2413,14 +2413,8 @@ EmoteSection:Toggle({
         EmoteState.enabled = Value
         if Value and not EmoteState.emoteWheelLoaded then
             EmoteState.emoteWheelLoaded = true
-            -- Override emote wheel's notification system to use library notifications (keep override active)
-            getgenv().Notify = function(data)
-                Library:Notification({
-                    Title = data.Title or "Emote Wheel",
-                    Description = data.Content or data.Description or "",
-                    Icon = data.Icon or "71408678974152"
-                })
-            end
+            -- Disable emote wheel's notifications entirely
+            getgenv().Notify = function() end
             
             -- Load emote wheel from your GitHub repo (same pattern as library)
             local success, err = pcall(function()
