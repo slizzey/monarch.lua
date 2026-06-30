@@ -2220,7 +2220,7 @@ local function updateWaypointList()
     end
     notify("Monarch", "Updating list: " .. #waypointList .. " items", 2)
     if waypointListbox then
-        waypointListbox:Refresh(waypointList)
+        waypointListbox:SetItems(waypointList)
     end
 end
 
