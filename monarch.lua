@@ -2167,15 +2167,15 @@ WaypointSettings:Button({
         })
 
         pendingWaypointName = ""
-        updateWaypointDropdown()
+        updateWaypointListbox()
     end
 })
 
-local waypointDropdown = WaypointSettings:Dropdown({
-    Name = "Select Waypoint",
-    Flag = "SelectedWaypoint",
-    Options = {"No waypoints"},
-    Default = nil,
+local waypointListbox = WaypointSettings:Listbox({
+    Name = "Waypoints",
+    Flag = "WaypointListbox",
+    Items = {"No waypoints"},
+    Multi = false,
     Callback = function(Value)
         for i, wp in ipairs(WaypointState.waypoints) do
             if wp.name == Value then
@@ -2186,7 +2186,7 @@ local waypointDropdown = WaypointSettings:Dropdown({
     end
 })
 
-local function updateWaypointDropdown()
+local function updateWaypointListbox()
     local names = {}
     for _, wp in ipairs(WaypointState.waypoints) do
         table.insert(names, wp.name)
@@ -2194,10 +2194,10 @@ local function updateWaypointDropdown()
     if #names == 0 then
         names = {"No waypoints"}
     end
-    waypointDropdown:Refresh(names, nil)
+    waypointListbox:Refresh(names)
 end
 
-updateWaypointDropdown()
+updateWaypointListbox()
 
 WaypointSettings:Button({
     Name = "Goto Waypoint",
@@ -2225,7 +2225,7 @@ WaypointSettings:Button({
             if drawing.Dot then drawing.Dot:Remove() end
         end
         WaypointState.drawings = {}
-        updateWaypointDropdown()
+        updateWaypointListbox()
     end
 })
 

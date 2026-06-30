@@ -5768,7 +5768,6 @@ function fetchAllEmotes()
         local total = #cacheData
         applyData(cacheData, total)
         cacheLoaded = true
-        getgenv().Notify({Title = '7yd7 | Emote', Content = "📦 Emotes loaded", Duration = 3})
         task.spawn(function()
             local emoteData, total = fetchFromUrl()
             if emoteData then
@@ -5783,7 +5782,6 @@ function fetchAllEmotes()
     local emoteData, total = fetchFromUrl()
     if emoteData then
         applyData(emoteData, total)
-        getgenv().Notify({Title = '7yd7 | Emote', Content = "📦 Emotes loaded", Duration = 3})
     else
         State.emotesData = {{id = 3360686498, name = "Stadium"},{id = 3360692915, name = "Tilt"},{id = 3576968026, name = "Shrug"},{id = 3360689775, name = "Salute"}}
         State.totalEmotesLoaded = #State.emotesData
@@ -5795,7 +5793,6 @@ function fetchAllEmotes()
         updatePageDisplay()
         updateEmotes()
         State.isLoading = false
-        getgenv().Notify({Title = '7yd7 | Emote', Content = "📦 Emotes loaded", Duration = 3})
     end
 end
 
