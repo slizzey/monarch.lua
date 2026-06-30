@@ -2311,12 +2311,17 @@ EmoteSection:Toggle({
             
             if not success then
                 warn("Failed to load emote wheel: " .. tostring(err))
+            else
+                Library:Notification({
+                    Title = "Emote Wheel",
+                    Description = "Press . to open",
+                    Icon = "71408678974152",
+                    Duration = 3
+                })
             end
         end
     end
 })
-
-EmoteSection:Label("Press '.' to open emote wheel")
 
 MiscSection:Toggle({
     Name = "FPS Counter",

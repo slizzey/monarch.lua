@@ -8600,8 +8600,7 @@ end
 
 if UserInputService.KeyboardEnabled then
     getgenv().Notify({
-        Title = '7yd7 | Emote PC',
-        Content = '💻 Open menu press button "."',
+        Title = 'monarch',
         Duration = 10
     })
 end
