@@ -2374,11 +2374,9 @@ local WaypointToggle = MiscSection:Toggle({
     end
 })
 
-local WaypointSettings = WaypointToggle:Settings()
-
 local pendingWaypointName = ""
 
-WaypointSettings:Textbox({
+MiscSection:Textbox({
     Name = "Waypoint Name",
     Placeholder = "Enter name...",
     Callback = function(Value)
@@ -2386,7 +2384,7 @@ WaypointSettings:Textbox({
     end
 })
 
-WaypointSettings:Button({
+MiscSection:Button({
     Name = "Add Waypoint",
     Callback = function()
         if pendingWaypointName == "" then return end
@@ -2406,7 +2404,7 @@ WaypointSettings:Button({
     end
 })
 
-local waypointDropdown = WaypointSettings:Dropdown({
+local waypointDropdown = MiscSection:Dropdown({
     Name = "Select Waypoint",
     Flag = "SelectedWaypoint",
     Options = {},
@@ -2429,7 +2427,7 @@ local function updateWaypointDropdown()
     waypointDropdown:Refresh(names, WaypointState.selectedWaypoint and WaypointState.waypoints[WaypointState.selectedWaypoint].name or nil)
 end
 
-WaypointSettings:Button({
+MiscSection:Button({
     Name = "Teleport to Selected",
     Callback = function()
         if not WaypointState.selectedWaypoint then return end
@@ -2444,7 +2442,7 @@ WaypointSettings:Button({
     end
 })
 
-WaypointSettings:Button({
+MiscSection:Button({
     Name = "Delete Selected",
     Callback = function()
         if not WaypointState.selectedWaypoint then return end
@@ -2454,7 +2452,7 @@ WaypointSettings:Button({
     end
 })
 
-WaypointSettings:Button({
+MiscSection:Button({
     Name = "Clear All",
     Callback = function()
         WaypointState.waypoints = {}
@@ -2469,7 +2467,7 @@ WaypointSettings:Button({
     end
 })
 
-WaypointSettings:Toggle({
+MiscSection:Toggle({
     Name = "Show Distance",
     Flag = "WaypointShowDistance",
     Default = true,
@@ -2478,7 +2476,7 @@ WaypointSettings:Toggle({
     end
 })
 
-WaypointSettings:Toggle({
+MiscSection:Toggle({
     Name = "Show Direction",
     Flag = "WaypointShowDirection",
     Default = true,
