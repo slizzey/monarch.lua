@@ -2158,6 +2158,21 @@ local WaypointSettings = WaypointToggle:Settings()
 
 local pendingWaypointName = ""
 
+local waypointListbox
+
+local function updateWaypointListbox()
+    local names = {}
+    for _, wp in ipairs(WaypointState.waypoints) do
+        table.insert(names, wp.name)
+    end
+    if #names == 0 then
+        names = {"No waypoints"}
+    end
+    if waypointListbox then
+        waypointListbox:Refresh(names)
+    end
+end
+
 WaypointSettings:Textbox({
     Name = "Waypoint Name",
     Placeholder = "Enter name...",
@@ -2186,7 +2201,7 @@ WaypointSettings:Button({
     end
 })
 
-local waypointListbox = WaypointSettings:Listbox({
+waypointListbox = WaypointSettings:Listbox({
     Name = "Waypoints",
     Flag = "WaypointListbox",
     Items = {"No waypoints"},
@@ -2200,17 +2215,6 @@ local waypointListbox = WaypointSettings:Listbox({
         end
     end
 })
-
-local function updateWaypointListbox()
-    local names = {}
-    for _, wp in ipairs(WaypointState.waypoints) do
-        table.insert(names, wp.name)
-    end
-    if #names == 0 then
-        names = {"No waypoints"}
-    end
-    waypointListbox:Refresh(names)
-end
 
 updateWaypointListbox()
 
