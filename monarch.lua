@@ -2122,6 +2122,131 @@ GravitySettings:Slider({
     end
 })
 
+local WaypointToggle = MoveSection:Toggle({
+    Name = "Waypoints",
+    Flag = "WaypointsEnabled",
+    Default = false,
+    Callback = function(Value)
+        WaypointState.enabled = Value
+        if not Value then
+            for _, drawing in pairs(WaypointState.drawings) do
+                if drawing.Text then drawing.Text:Remove() end
+                if drawing.Line then drawing.Line:Remove() end
+                if drawing.Dot then drawing.Dot:Remove() end
+            end
+            WaypointState.drawings = {}
+        end
+    end
+})
+
+local WaypointSettings = WaypointToggle:Settings()
+
+local pendingWaypointName = ""
+
+WaypointSettings:Textbox({
+    Name = "Waypoint Name",
+    Placeholder = "Enter name...",
+    Callback = function(Value)
+        pendingWaypointName = Value or ""
+    end
+})
+
+WaypointSettings:Button({
+    Name = "Set Waypoint",
+    Callback = function()
+        if pendingWaypointName == "" then return end
+
+        local character = LocalPlayer.Character
+        local rootPart = character and character:FindFirstChild("HumanoidRootPart")
+        if not rootPart then return end
+
+        table.insert(WaypointState.waypoints, {
+            position = rootPart.Position,
+            name = pendingWaypointName,
+            color = Color3.fromRGB(100, 60, 180)
+        })
+
+        pendingWaypointName = ""
+        updateWaypointDropdown()
+    end
+})
+
+local waypointDropdown = WaypointSettings:Dropdown({
+    Name = "Select Waypoint",
+    Flag = "SelectedWaypoint",
+    Options = {"No waypoints"},
+    Default = nil,
+    Callback = function(Value)
+        for i, wp in ipairs(WaypointState.waypoints) do
+            if wp.name == Value then
+                WaypointState.selectedWaypoint = i
+                break
+            end
+        end
+    end
+})
+
+local function updateWaypointDropdown()
+    local names = {}
+    for _, wp in ipairs(WaypointState.waypoints) do
+        table.insert(names, wp.name)
+    end
+    if #names == 0 then
+        names = {"No waypoints"}
+    end
+    waypointDropdown:Refresh(names, nil)
+end
+
+updateWaypointDropdown()
+
+WaypointSettings:Button({
+    Name = "Goto Waypoint",
+    Callback = function()
+        if not WaypointState.selectedWaypoint then return end
+        local waypoint = WaypointState.waypoints[WaypointState.selectedWaypoint]
+        if not waypoint then return end
+
+        local character = LocalPlayer.Character
+        local rootPart = character and character:FindFirstChild("HumanoidRootPart")
+        if not rootPart then return end
+
+        rootPart.CFrame = CFrame.new(waypoint.position)
+    end
+})
+
+WaypointSettings:Button({
+    Name = "Clear History",
+    Callback = function()
+        WaypointState.waypoints = {}
+        WaypointState.selectedWaypoint = nil
+        for _, drawing in pairs(WaypointState.drawings) do
+            if drawing.Text then drawing.Text:Remove() end
+            if drawing.Line then drawing.Line:Remove() end
+            if drawing.Dot then drawing.Dot:Remove() end
+        end
+        WaypointState.drawings = {}
+        updateWaypointDropdown()
+    end
+})
+
+WaypointSettings:Toggle({
+    Name = "Show Distance",
+    Flag = "WaypointShowDistance",
+    Default = true,
+    Callback = function(Value)
+        WaypointState.showDistance = Value
+    end
+})
+
+WaypointSettings:Toggle({
+    Name = "Show Direction",
+    Flag = "WaypointShowDirection",
+    Default = true,
+    Callback = function(Value)
+        WaypointState.showDirection = Value
+    end
+})
+
 local PlayersPage = Window:Page({Name = "Players"})
 local PlayersSection = PlayersPage:Section({Name = "Main", Side = 1})
 
@@ -2312,13 +2437,6 @@ EmoteSection:Toggle({
             
             if not success then
                 warn("Failed to load emote wheel: " .. tostring(err))
-            else
-                Library:Notification({
-                    Title = "Emote Wheel",
-                    Description = "Press . to open",
-                    Icon = "71408678974152",
-                    Duration = 3
-                })
             end
         end
     end
@@ -2360,139 +2478,6 @@ MiscSection:Toggle({
         if GUI.BindToastGui then
             GUI.BindToastGui.ResetOnSpawn = not Value
         end
-    end
-})
-
-local WaypointToggle = MiscSection:Toggle({
-    Name = "Waypoints",
-    Flag = "WaypointsEnabled",
-    Default = false,
-    Callback = function(Value)
-        WaypointState.enabled = Value
-        if not Value then
-            for _, drawing in pairs(WaypointState.drawings) do
-                if drawing.Text then drawing.Text:Remove() end
-                if drawing.Line then drawing.Line:Remove() end
-                if drawing.Dot then drawing.Dot:Remove() end
-            end
-            WaypointState.drawings = {}
-        end
-    end
-})
-
-local pendingWaypointName = ""
-
-MiscSection:Textbox({
-    Name = "Waypoint Name",
-    Placeholder = "Enter name...",
-    Callback = function(Value)
-        pendingWaypointName = Value or ""
-    end
-})
-
-MiscSection:Button({
-    Name = "Add Waypoint",
-    Callback = function()
-        if pendingWaypointName == "" then return end
-
-        local character = LocalPlayer.Character
-        local rootPart = character and character:FindFirstChild("HumanoidRootPart")
-        if not rootPart then return end
-
-        table.insert(WaypointState.waypoints, {
-            position = rootPart.Position,
-            name = pendingWaypointName,
-            color = Color3.fromRGB(100, 60, 180)
-        })
-
-        pendingWaypointName = ""
-        updateWaypointDropdown()
-    end
-})
-
-local waypointDropdown = MiscSection:Dropdown({
-    Name = "Select Waypoint",
-    Flag = "SelectedWaypoint",
-    Options = {"No waypoints"},
-    Default = nil,
-    Callback = function(Value)
-        for i, wp in ipairs(WaypointState.waypoints) do
-            if wp.name == Value then
-                WaypointState.selectedWaypoint = i
-                break
-            end
-        end
-    end
-})
-
-local function updateWaypointDropdown()
-    local names = {}
-    for _, wp in ipairs(WaypointState.waypoints) do
-        table.insert(names, wp.name)
-    end
-    if #names == 0 then
-        names = {"No waypoints"}
-    end
-    waypointDropdown:Refresh(names, nil)
-end
-
-updateWaypointDropdown()
-
-MiscSection:Button({
-    Name = "Teleport to Selected",
-    Callback = function()
-        if not WaypointState.selectedWaypoint then return end
-        local waypoint = WaypointState.waypoints[WaypointState.selectedWaypoint]
-        if not waypoint then return end
-
-        local character = LocalPlayer.Character
-        local rootPart = character and character:FindFirstChild("HumanoidRootPart")
-        if not rootPart then return end
-
-        rootPart.CFrame = CFrame.new(waypoint.position)
-    end
-})
-
-MiscSection:Button({
-    Name = "Delete Selected",
-    Callback = function()
-        if not WaypointState.selectedWaypoint then return end
-        table.remove(WaypointState.waypoints, WaypointState.selectedWaypoint)
-        WaypointState.selectedWaypoint = nil
-        updateWaypointDropdown()
-    end
-})
-
-MiscSection:Button({
-    Name = "Clear All",
-    Callback = function()
-        WaypointState.waypoints = {}
-        WaypointState.selectedWaypoint = nil
-        for _, drawing in pairs(WaypointState.drawings) do
-            if drawing.Text then drawing.Text:Remove() end
-            if drawing.Line then drawing.Line:Remove() end
-            if drawing.Dot then drawing.Dot:Remove() end
-        end
-        WaypointState.drawings = {}
-        updateWaypointDropdown()
-    end
-})
-
-MiscSection:Toggle({
-    Name = "Show Distance",
-    Flag = "WaypointShowDistance",
-    Default = true,
-    Callback = function(Value)
-        WaypointState.showDistance = Value
-    end
-})
-
-MiscSection:Toggle({
-    Name = "Show Direction",
-    Flag = "WaypointShowDirection",
-    Default = true,
-    Callback = function(Value)
-        WaypointState.showDirection = Value
     end
 })
 
