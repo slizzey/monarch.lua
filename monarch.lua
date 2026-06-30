@@ -2280,6 +2280,9 @@ Players.PlayerRemoving:Connect(function()
     updatePlayerList()
 end)
 
+local MiscPage = Window:Page({Name = "Misc"})
+local MiscSection = MiscPage:Section({Name = "Misc", Side = 1})
+
 local EmoteSection = MiscPage:Section({Name = "Emote", Side = 2})
 
 local EmoteState = {
@@ -2314,9 +2317,6 @@ EmoteSection:Toggle({
 })
 
 EmoteSection:Label("Press '.' to open emote wheel")
-
-local MiscPage = Window:Page({Name = "Misc"})
-local MiscSection = MiscPage:Section({Name = "Misc", Side = 1})
 
 MiscSection:Toggle({
     Name = "FPS Counter",
