@@ -2307,19 +2307,6 @@ EmoteSection:Toggle({
             
             if not success then
                 warn("Failed to load emote wheel: " .. tostring(err))
-                Library:Notification({
-                    Title = "Emote Wheel Error",
-                    Description = tostring(err),
-                    Icon = "71408678974152",
-                    Duration = 3
-                })
-            else
-                Library:Notification({
-                    Title = "Emote Wheel",
-                    Description = "Press '.' to open",
-                    Icon = "71408678974152",
-                    Duration = 3
-                })
             end
         end
     end
