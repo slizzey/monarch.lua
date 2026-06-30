@@ -211,6 +211,7 @@ local WaypointState = {
     drawings = {},
     showDistance = true,
     showDirection = true,
+    selectedWaypoint = nil
 }
 
 local originalLighting = {
@@ -2386,7 +2387,7 @@ WaypointSettings:Textbox({
 })
 
 WaypointSettings:Button({
-    Name = "+",
+    Name = "Add Waypoint",
     Callback = function()
         if pendingWaypointName == "" then return end
 
@@ -2401,15 +2402,55 @@ WaypointSettings:Button({
         })
 
         pendingWaypointName = ""
+        updateWaypointDropdown()
+    end
+})
+
+local waypointDropdown = WaypointSettings:Dropdown({
+    Name = "Select Waypoint",
+    Flag = "SelectedWaypoint",
+    Options = {},
+    Default = nil,
+    Callback = function(Value)
+        for i, wp in ipairs(WaypointState.waypoints) do
+            if wp.name == Value then
+                WaypointState.selectedWaypoint = i
+                break
+            end
+        end
+    end
+})
+
+local function updateWaypointDropdown()
+    local names = {}
+    for _, wp in ipairs(WaypointState.waypoints) do
+        table.insert(names, wp.name)
+    end
+    waypointDropdown:Refresh(names, WaypointState.selectedWaypoint and WaypointState.waypoints[WaypointState.selectedWaypoint].name or nil)
+end
+
+WaypointSettings:Button({
+    Name = "Teleport to Selected",
+    Callback = function()
+        if not WaypointState.selectedWaypoint then return end
+        local waypoint = WaypointState.waypoints[WaypointState.selectedWaypoint]
+        if not waypoint then return end
+
+        local character = LocalPlayer.Character
+        local rootPart = character and character:FindFirstChild("HumanoidRootPart")
+        if not rootPart then return end
+
+        rootPart.CFrame = CFrame.new(waypoint.position)
     end
 })
 
 WaypointSettings:Button({
-    Name = "Delete Last",
+    Name = "Delete Selected",
     Callback = function()
-        if #WaypointState.waypoints > 0 then
-            table.remove(WaypointState.waypoints)
-        end
+        if not WaypointState.selectedWaypoint then return end
+        table.remove(WaypointState.waypoints, WaypointState.selectedWaypoint)
+        WaypointState.selectedWaypoint = nil
+        updateWaypointDropdown()
     end
 })
 
@@ -2417,12 +2458,14 @@ WaypointSettings:Button({
     Name = "Clear All",
     Callback = function()
         WaypointState.waypoints = {}
+        WaypointState.selectedWaypoint = nil
         for _, drawing in pairs(WaypointState.drawings) do
             if drawing.Text then drawing.Text:Remove() end
             if drawing.Line then drawing.Line:Remove() end
             if drawing.Dot then drawing.Dot:Remove() end
         end
         WaypointState.drawings = {}
+        updateWaypointDropdown()
     end
 })
 
