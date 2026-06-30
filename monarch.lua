@@ -2298,6 +2298,7 @@ EmoteSection:Toggle({
         EmoteState.enabled = Value
         if Value and not EmoteState.emoteWheelLoaded then
             EmoteState.emoteWheelLoaded = true
+            
             getgenv().Notify = function() end
             
             local success, err = pcall(function()

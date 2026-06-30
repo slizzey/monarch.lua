@@ -103,7 +103,7 @@ local State = {
 }
 
 Config = {
-    NotifyEnabled = true,
+    NotifyEnabled = false,
     SearchVisible = true,
     FavVisible = true,
     ModeVisible = true,
@@ -8591,16 +8591,4 @@ end)
 
 if UserInputService.TouchEnabled and not UserInputService.KeyboardEnabled then
     SafeLoad("https://raw.githubusercontent.com/7yd7/Hub/refs/heads/Branch/GUIS/OpenEmote.lua", "Open Emote")
-    getgenv().Notify({
-        Title = '7yd7 | Emote Mobile',
-        Content = '📱 Added emote open button for ease of use',
-        Duration = 10
-    })
-end
-
-if UserInputService.KeyboardEnabled then
-    getgenv().Notify({
-        Title = 'monarch',
-        Duration = 10
-    })
 end
