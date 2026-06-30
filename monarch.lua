@@ -1177,6 +1177,21 @@ local function createESP(plr)
             table.insert(espSkeletonLines[plr], line)
         end
     end
+    -- Listen for character spawns to apply ESP/chams/skeleton
+    plr.CharacterAdded:Connect(function(char)
+        if ESPState.chamsEnabled then
+            local highlight = Instance.new("Highlight")
+            highlight.Name = "Monarch_Charm"
+            highlight.FillColor = ESPState.chamsFillColor
+            highlight.OutlineColor = ESPState.chamsOutlineColor
+            highlight.FillTransparency = ESPState.chamsFillTransparency
+            highlight.OutlineTransparency = ESPState.chamsOutlineTransparency
+            highlight.Enabled = true
+            highlight.Adornee = char
+            highlight.Parent = char
+            ESPState.highlights[plr] = highlight
+        end
+    end)
 end
 
 local function removeESP(plr)
