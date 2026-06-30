@@ -205,7 +205,6 @@ local MiscState = {
 
 local trollTarget = nil
 
--- Waypoint System
 local WaypointState = {
     enabled = false,
     waypoints = {},
@@ -222,7 +221,6 @@ local originalLighting = {
     FogStart = Lighting.FogStart,
 }
 
--- Atmospheric Fog
 local atmosphericFogSaved = {}
 local atmosphericFogInstance = nil
 
@@ -263,7 +261,6 @@ local function disableAtmosphericFog()
     end
 end
 
--- Rain
 local rainHeartbeatConn = nil
 local rainFolder = nil
 local rainRayParams = nil
@@ -454,7 +451,6 @@ local function disableRain()
     rainDropParts = {}
 end
 
--- Floating Lamps
 local lampsUpdateConn = nil
 local lampsFolder = nil
 local lamps = {}
@@ -760,7 +756,6 @@ local function disableFloatingLamps()
     lamps = {}
 end
 
--- RTX / Post-Processing Effects
 local rtxEffects = {
     bloom = nil,
     colorCorrection = nil,
@@ -1278,7 +1273,6 @@ RunService.Stepped:Connect(function()
     end
 end)
 
--- Simple flight using BodyVelocity (working version)
 RunService.RenderStepped:Connect(function(dt)
     if not MovementState.flyOn then return end
     local char = LocalPlayer.Character
@@ -1483,8 +1477,8 @@ local function startSpectate(target)
     GUI.spectateTarget = target
     GUI.originalCameraSubject = Camera.CameraSubject
     GUI.originalCameraType = Camera.CameraType
-    Camera.CameraType = Enum.CameraType.Fixed
-    Camera.CameraSubject = target.Character:FindFirstChild("Humanoid")
+    Camera.CameraType = Enum.CameraType.Follow
+    Camera.CameraSubject = target.Character:FindFirstChild("Head")
     notify("Monarch", "Spectating: " .. target.Name, 3)
 end
 
@@ -2576,7 +2570,6 @@ WaypointSettings:Toggle({
     end
 })
 
--- Waypoint Rendering
 local function worldToScreen(position)
     local screenPos, onScreen = Camera:WorldToScreenPoint(position)
     if onScreen then
