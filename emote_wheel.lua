@@ -1,10 +1,3 @@
---[[ 
-    Source script taken from: https://github.com/Roblox/creator-docs/blob/main/content/en-us/characters/emotes.md
-
-    scriptblox: https://scriptblox.com/script/Universal-Script-7yd7-I-Emote-Script-48024
-]]
-
-
 if _G.EmotesGUIRunning then
     getgenv().Notify({
         Title = '7yd7 | Emote',
@@ -1278,11 +1271,6 @@ ApplyFavoriteButtonVisual = function()
     local colorKey = isOn and "Favorite" or "NotFavorite"
     UI.Favorite.ImageColor3 = AnimationSystem.GetIconColor(colorKey)
 end
-
--- Optimizing performance: Removed RenderStepped loop
--- game:GetService("RunService").RenderStepped:Connect(function()
---     updateGUIColors()
--- end)
 
 local ThemeTab = SettingsLib.CreateTab("Theme", 3)
 

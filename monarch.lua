@@ -2279,120 +2279,7 @@ Players.PlayerRemoving:Connect(function()
     updatePlayerList()
 end)
 
-local AvatarPage = Window:Page({Name = "Avatar"})
-local AvatarSection = AvatarPage:Section({Name = "Avatar Changer", Side = 1})
-
-local AvatarState = {
-    equippedItems = {},
-    searchQuery = "",
-    currentCategory = "All",
-    currentItemId = nil,
-    previewImage = nil
-}
-
-local MarketplaceService = game:GetService("MarketplaceService")
-local InsertService = game:GetService("InsertService")
-local Players = game:GetService("Players")
-
-AvatarSection:Textbox({
-    Name = "Search",
-    Placeholder = "Search catalog...",
-    Callback = function(Value)
-        AvatarState.searchQuery = Value or ""
-    end
-})
-
-AvatarSection:Dropdown({
-    Name = "Category",
-    Flag = "AvatarCategory",
-    Options = {"All", "Hats", "Faces", "Shirts", "Pants", "T-Shirts", "Accessories"},
-    Default = "All",
-    Callback = function(Value)
-        AvatarState.currentCategory = Value
-    end
-})
-
-AvatarSection:Textbox({
-    Name = "Item ID",
-    Placeholder = "Enter asset ID...",
-    Callback = function(Value)
-        AvatarState.currentItemId = tonumber(Value)
-    end
-})
-
-AvatarSection:Label("Item Preview")
-
-local previewLabel = AvatarSection:Label("No item selected")
-
-AvatarSection:Button({
-    Name = "Load Preview",
-    Callback = function()
-        if not AvatarState.currentItemId then return end
-
-        local success, productInfo = pcall(function()
-            return MarketplaceService:GetProductInfo(AvatarState.currentItemId)
-        end)
-
-        if not success then
-            previewLabel:ChangeText("Invalid item ID")
-            return
-        end
-
-        if productInfo.AssetTypeId ~= 8 and productInfo.AssetTypeId ~= 11 and productInfo.AssetTypeId ~= 12 and productInfo.AssetTypeId ~= 17 and productInfo.AssetTypeId ~= 18 then
-            previewLabel:ChangeText("Not an avatar item")
-            return
-        end
-
-        previewLabel:ChangeText(productInfo.Name)
-    end
-})
-
-AvatarSection:Button({
-    Name = "Equip Item",
-    Callback = function()
-        if not AvatarState.currentItemId then return end
-
-        local character = LocalPlayer.Character
-        if not character then return end
-
-        local humanoid = character:FindFirstChild("Humanoid")
-        if not humanoid then return end
-
-        pcall(function()
-            local item = InsertService:LoadAsset(AvatarState.currentItemId)
-            if item then
-                item.Parent = character
-                for _, child in pairs(item:GetChildren()) do
-                    if child:IsA("Accessory") or child:IsA("Shirt") or child:IsA("Pants") then
-                        child.Parent = character
-                    end
-                end
-                item:Destroy()
-                table.insert(AvatarState.equippedItems, AvatarState.currentItemId)
-            end
-        end)
-    end
-})
-
-AvatarSection:Button({
-    Name = "Unequip All",
-    Callback = function()
-        local character = LocalPlayer.Character
-        if not character then return end
-
-        for _, item in pairs(character:GetChildren()) do
-            if item:IsA("Accessory") or item:IsA("Shirt") or item:IsA("Pants") or item:IsA("BodyColors") then
-                if not item:IsA("BodyColors") then
-                    item:Destroy()
-                end
-            end
-        end
-
-        AvatarState.equippedItems = {}
-    end
-})
-
-local EmoteSection = AvatarPage:Section({Name = "Emote", Side = 2})
+local EmoteSection = MiscPage:Section({Name = "Emote", Side = 2})
 
 local EmoteState = {
     enabled = false,
@@ -2407,10 +2294,8 @@ EmoteSection:Toggle({
         EmoteState.enabled = Value
         if Value and not EmoteState.emoteWheelLoaded then
             EmoteState.emoteWheelLoaded = true
-            -- Disable emote wheel's notifications entirely
             getgenv().Notify = function() end
             
-            -- Load emote wheel from your GitHub repo (same pattern as library)
             local success, err = pcall(function()
                 local code = game:HttpGet("https://raw.githubusercontent.com/slizzey/monarch.lua/main/emote_wheel.lua")
                 local func, loadErr = loadstring(code)
@@ -2425,13 +2310,15 @@ EmoteSection:Toggle({
                 Library:Notification({
                     Title = "Emote Wheel Error",
                     Description = tostring(err),
-                    Icon = "71408678974152"
+                    Icon = "71408678974152",
+                    Duration = 3
                 })
             else
                 Library:Notification({
                     Title = "Emote Wheel",
                     Description = "Press '.' to open",
-                    Icon = "71408678974152"
+                    Icon = "71408678974152",
+                    Duration = 3
                 })
             end
         end
