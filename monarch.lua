@@ -2158,19 +2158,6 @@ local WaypointSettings = WaypointToggle:Settings()
 
 local pendingWaypointName = ""
 
-local waypointListbox
-
-local function getWaypointNames()
-    local names = {}
-    for _, wp in ipairs(WaypointState.waypoints) do
-        table.insert(names, wp.name)
-    end
-    if #names == 0 then
-        names = {"No waypoints"}
-    end
-    return names
-end
-
 WaypointSettings:Textbox({
     Name = "Waypoint Name",
     Placeholder = "Enter name...",
@@ -2195,24 +2182,7 @@ WaypointSettings:Button({
         })
 
         pendingWaypointName = ""
-        if waypointListbox then
-            waypointListbox:Refresh(getWaypointNames())
-        end
-    end
-})
-
-waypointListbox = WaypointSettings:Listbox({
-    Name = "Waypoints",
-    Flag = "WaypointListbox",
-    Items = getWaypointNames(),
-    Multi = false,
-    Callback = function(Value)
-        for i, wp in ipairs(WaypointState.waypoints) do
-            if wp.name == Value then
-                WaypointState.selectedWaypoint = i
-                break
-            end
-        end
+        updateWaypointList()
     end
 })
 
@@ -2242,9 +2212,7 @@ WaypointSettings:Button({
             if drawing.Dot then drawing.Dot:Remove() end
         end
         WaypointState.drawings = {}
-        if waypointListbox then
-            waypointListbox:Refresh(getWaypointNames())
-        end
+        updateWaypointList()
     end
 })
 
@@ -2263,6 +2231,37 @@ WaypointSettings:Toggle({
     Default = true,
     Callback = function(Value)
         WaypointState.showDirection = Value
+    end
+})
+
+local waypointList = {}
+local selectedWaypointName = ""
+
+local function updateWaypointList()
+    waypointList = {}
+    for _, wp in ipairs(WaypointState.waypoints) do
+        table.insert(waypointList, wp.name)
+    end
+    if waypointListbox then
+        waypointListbox:Refresh(waypointList)
+    end
+end
+
+updateWaypointList()
+
+local waypointListbox = MoveSection:Listbox({
+    Name = "Waypoints",
+    Flag = "WaypointListbox",
+    Items = waypointList,
+    Multi = false,
+    Callback = function(Value)
+        selectedWaypointName = Value
+        for i, wp in ipairs(WaypointState.waypoints) do
+            if wp.name == Value then
+                WaypointState.selectedWaypoint = i
+                break
+            end
+        end
     end
 })
 
