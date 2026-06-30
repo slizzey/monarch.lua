@@ -1511,24 +1511,6 @@ local function stopSpectate()
     notify("Monarch", "Stopped spectating", 2)
 end
 
-local function voteKickPlayer(target)
-    if not target then return end
-    pcall(function()
-        local TextChatService = game:GetService("TextChatService")
-        if TextChatService then
-            local channel = TextChatService:FindFirstChild("TextChannels"):FindFirstChild("RBXGeneral")
-            if channel then
-                channel:SendAsync("/vk " .. target.Name)
-            end
-        else
-        local StarterGui = game:GetService("StarterGui")
-        StarterGui:SetCore("ChatMakeSystemMessage", {
-            Text = "[Monarch] Vote kick: /vk " .. target.Name,
-            Color = Color3.fromRGB(100, 60, 180),
-        })
-        end
-    end)
-end
 
 local function respawnCharacter()
     local char = LocalPlayer.Character
@@ -1983,19 +1965,6 @@ DOFSettings:Slider({
 })
 
 VisualExtraSection:Toggle({
-    Name = "Force Lighting",
-    Flag = "ForceLighting",
-    Default = false,
-    Callback = function(Value)
-        MiscState.forceLighting = Value
-        if Value then enableLightingForce() else disableLightingForce() end
-    end
-})
-
-local MovementPage = Window:Page({Name = "Movement"})
-local MoveSection = MovementPage:Section({Name = "Main", Side = 1})
-
-MoveSection:Toggle({
     Name = "Shield",
     Flag = "ShieldEnabled",
     Default = false,
@@ -2012,6 +1981,9 @@ MoveSection:Toggle({
         end
     end
 })
+
+local MovementPage = Window:Page({Name = "Movement"})
+local MoveSection = MovementPage:Section({Name = "Main", Side = 1})
 
 local WalkSpeedToggle = MoveSection:Toggle({
     Name = "Walk Speed",
@@ -2242,19 +2214,21 @@ local function updateWaypointList()
     for _, wp in ipairs(WaypointState.waypoints) do
         table.insert(waypointList, wp.name)
     end
+    if #waypointList == 0 then
+        waypointList = {"No waypoints"}
+    end
     if waypointListbox then
         waypointListbox:Refresh(waypointList)
     end
 end
 
-updateWaypointList()
-
 local waypointListbox = MoveSection:Listbox({
     Name = "Waypoints",
     Flag = "WaypointListbox",
-    Items = waypointList,
+    Items = {"No waypoints"},
     Multi = false,
     Callback = function(Value)
+        if Value == "No waypoints" then return end
         selectedWaypointName = Value
         for i, wp in ipairs(WaypointState.waypoints) do
             if wp.name == Value then
@@ -2264,6 +2238,8 @@ local waypointListbox = MoveSection:Listbox({
         end
     end
 })
+
+updateWaypointList()
 
 local PlayersPage = Window:Page({Name = "Players"})
 local PlayersSection = PlayersPage:Section({Name = "Main", Side = 1})
@@ -2349,16 +2325,6 @@ PlayersActionSection:Button({
     end
 })
 
-PlayersActionSection:Button({
-    Name = "Vote Kick Target",
-    Callback = function()
-        if not trollTarget then
-            notify("Monarch", "No target selected", 2)
-            return
-        end
-        voteKickPlayer(trollTarget)
-    end
-})
 
 local WhitelistSection = PlayersPage:Section({Name = "Whitelist", Side = 2})
 
@@ -2622,6 +2588,6 @@ UserInputService.InputBegan:Connect(function(input, processed)
     end
 end)
 
-Window:Category("Settings")
+
 local SettingsPage = Library:CreateSettingsPage(Window, KeybindList)
 Window:Init()
