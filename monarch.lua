@@ -2407,7 +2407,7 @@ MiscSection:Button({
 local waypointDropdown = MiscSection:Dropdown({
     Name = "Select Waypoint",
     Flag = "SelectedWaypoint",
-    Options = {},
+    Options = {"No waypoints"},
     Default = nil,
     Callback = function(Value)
         for i, wp in ipairs(WaypointState.waypoints) do
@@ -2424,8 +2424,13 @@ local function updateWaypointDropdown()
     for _, wp in ipairs(WaypointState.waypoints) do
         table.insert(names, wp.name)
     end
-    waypointDropdown:Refresh(names, WaypointState.selectedWaypoint and WaypointState.waypoints[WaypointState.selectedWaypoint].name or nil)
+    if #names == 0 then
+        names = {"No waypoints"}
+    end
+    waypointDropdown:Refresh(names, nil)
 end
+
+updateWaypointDropdown()
 
 MiscSection:Button({
     Name = "Teleport to Selected",
