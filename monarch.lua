@@ -2160,7 +2160,7 @@ local pendingWaypointName = ""
 
 local waypointListbox
 
-local function updateWaypointListbox()
+local function getWaypointNames()
     local names = {}
     for _, wp in ipairs(WaypointState.waypoints) do
         table.insert(names, wp.name)
@@ -2168,9 +2168,7 @@ local function updateWaypointListbox()
     if #names == 0 then
         names = {"No waypoints"}
     end
-    if waypointListbox then
-        waypointListbox:Refresh(names)
-    end
+    return names
 end
 
 WaypointSettings:Textbox({
@@ -2197,14 +2195,16 @@ WaypointSettings:Button({
         })
 
         pendingWaypointName = ""
-        updateWaypointListbox()
+        if waypointListbox then
+            waypointListbox:Refresh(getWaypointNames())
+        end
     end
 })
 
 waypointListbox = WaypointSettings:Listbox({
     Name = "Waypoints",
     Flag = "WaypointListbox",
-    Items = {"No waypoints"},
+    Items = getWaypointNames(),
     Multi = false,
     Callback = function(Value)
         for i, wp in ipairs(WaypointState.waypoints) do
@@ -2215,8 +2215,6 @@ waypointListbox = WaypointSettings:Listbox({
         end
     end
 })
-
-updateWaypointListbox()
 
 WaypointSettings:Button({
     Name = "Goto Waypoint",
@@ -2244,7 +2242,9 @@ WaypointSettings:Button({
             if drawing.Dot then drawing.Dot:Remove() end
         end
         WaypointState.drawings = {}
-        updateWaypointListbox()
+        if waypointListbox then
+            waypointListbox:Refresh(getWaypointNames())
+        end
     end
 })
 
