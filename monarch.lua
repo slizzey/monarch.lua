@@ -2153,6 +2153,7 @@ WaypointSettings:Button({
             color = Color3.fromRGB(100, 60, 180)
         })
 
+        notify("Monarch", "Waypoint '" .. pendingWaypointName .. "' added. Total: " .. #WaypointState.waypoints, 2)
         pendingWaypointName = ""
         updateWaypointList()
     end
@@ -2217,6 +2218,7 @@ local function updateWaypointList()
     if #waypointList == 0 then
         waypointList = {"No waypoints"}
     end
+    notify("Monarch", "Updating list: " .. #waypointList .. " items", 2)
     if waypointListbox then
         waypointListbox:Refresh(waypointList)
     end
